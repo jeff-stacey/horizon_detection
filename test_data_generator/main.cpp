@@ -136,6 +136,7 @@ struct Vec3
     Vec3() = default;
     Vec3(float x_, float y_, float z_): x(x_), y(y_), z(z_) {};
 };
+#pragma pack(pop)
 
 Vec3 operator*(float lhs, const Vec3& rhs)
 {
@@ -586,7 +587,7 @@ void start_gui(RenderState render_state, SimulationState state)
         // ----------
         bool typing = false;  // Used to silence keyboard control when using a textbox
         {
-            char save_filename_buf[256];
+            char save_filename_buf[256] = {};
             typing |= ImGui::InputText("Save File", save_filename_buf, sizeof(save_filename_buf));
             if (ImGui::Button("Save State"))
             {
@@ -594,7 +595,7 @@ void start_gui(RenderState render_state, SimulationState state)
                 save_file.write((const char*)&state, sizeof(state));
             }
 
-            char image_filename_buf[256];
+            char image_filename_buf[256] = {};
             typing |= ImGui::InputText("Image File", image_filename_buf, sizeof(image_filename_buf));
             if (ImGui::Button("Export Image"))
             {

@@ -1,0 +1,3 @@
+*.o
+imgui.ini
+test_image_generator
