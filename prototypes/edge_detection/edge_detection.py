@@ -27,7 +27,7 @@ import numpy as np
 ####################################
 
 currentImage = 'test_image_1.png' #Current image to perform edge detection on
-plotShow = False #Toggle comparison plot output
+plotShow = True #Toggle comparison plot output
 
 ####################################
 #            Get Image             #
@@ -51,7 +51,8 @@ def edge2bin(E, highThresh):
         Z[i,j] = 0
       else:
         Z[i,j] = 1
-        #or Z[i,j] = 255 if you want to visualize the edge
+        #Z[i,j] = 255 
+        #if you want to visualize the edge choose 255
 
   return Z
 
@@ -173,7 +174,16 @@ Z_thresh[strong_i, strong_j] = strong
 Z_thresh[weak_i, weak_j] = weak
 
 #Step 5: Hysteresis Edge Tracking
-##TODO
+for i in range(1, M-1):
+  for j in range(1, N-1):
+    if (Z_thresh[i,j] == weak):
+      if((Z_thresh[i+1, j-1] == strong) or (Z_thresh[i+1, j] == strong) or (Z_thresh[i+1, j+1] == strong)
+        or (Z_thresh[i, j-1] == strong) or (Z_thresh[i, j+1] == strong)
+        or (Z_thresh[i-1, j-1] == strong) or (Z_thresh[i-1, j] == strong) or (Z_thresh[i-1, j+1] == strong)):
+        Z_thresh[i, j] = strong
+      else:
+        Z_thresh[i, j] = 0
+
 
 #Output Edge Map
 Z_bin = edge2bin(Z_thresh, 2)
@@ -197,8 +207,8 @@ axarr[2].set_title("Prewitt Edge Map")
 axarr[2].imshow(edge2bin(D, 2))
 
 #Halfway Canny
-axarr[3].set_title("Sobel w/ Blur & Thinning")
-axarr[3].imshow(edge2bin(Z, 2))
+axarr[3].set_title("Canny Edge Map")
+axarr[3].imshow(edge2bin(Z_thresh, 2))
 
 # Show plot if desired
 if plotShow:
