@@ -10,6 +10,19 @@ import scipy.signal as sig
 import numpy as np
 
 ####################################
+#              Steps               #
+####################################
+
+# 1. Ensure PIL/pillow, matplotlib, numpy and scipy are installed
+# 2. Put the image to be evaluated in the same directory as this script
+# 3. update the "currentImage" variable with the images filename (include the .png)
+# 4. Run the Script!
+
+# NOTE: Don't worry if the output is a black image, the image data is all 0 and 1
+#       and so the output will look basically uniform. If you want to visualize the
+#       edge just modify Z[i,j] in the 'else' case in edge to bin as shown in the function
+
+####################################
 #       Important Variables        #
 ####################################
 
@@ -38,6 +51,7 @@ def edge2bin(E, highThresh):
         Z[i,j] = 0
       else:
         Z[i,j] = 1
+        #or Z[i,j] = 255 if you want to visualize the edge
 
   return Z
 
