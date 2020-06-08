@@ -49,8 +49,10 @@ CommandLineOptions parse_args(int argc, char** args)
             {
                 usage();
             }
-            std::ifstream loaded_file(args[arg_index], std::ios::binary);
-            loaded_file.read((char*)&options.loaded_state, sizeof(options.loaded_state));
+            if (!options.loaded_state.load_state(args[arg_index]))
+            {
+                exit(1);
+            }
         }
         else if (strcmp("--export", args[arg_index]) == 0)
         {
@@ -88,6 +90,8 @@ void start_gui(RenderState render_state, SimulationState state)
 
     Keyboard keys;
 
+    char filename_buf[256] = {};
+
     bool running = true;
     while (running)
     {
@@ -100,19 +104,17 @@ void start_gui(RenderState render_state, SimulationState state)
         // ----------
         bool typing = false;  // Used to silence keyboard control when using a textbox
         {
-            char save_filename_buf[256] = {};
-            typing |= ImGui::InputText("Save File", save_filename_buf, sizeof(save_filename_buf));
-            if (ImGui::Button("Save State"))
+            // Hack: -4 in buffer size leaving room for file extension
+            typing |= ImGui::InputText("Filename", filename_buf, sizeof(filename_buf) - 4);
+            if (ImGui::Button("Export"))
             {
-                std::ofstream save_file(save_filename_buf, std::ios::binary | std::ios::trunc);
-                save_file.write((const char*)&state, sizeof(state));
-            }
+                char* file_extension = filename_buf + strlen(filename_buf);
+                strncpy(file_extension, ".png", 4);
+                file_extension[4] = 0;
+                export_image(filename_buf, render_state, state);
+                strncpy(file_extension, ".hrz", 4);
+                state.save_state(filename_buf);
 
-            char image_filename_buf[256] = {};
-            typing |= ImGui::InputText("Image File", image_filename_buf, sizeof(image_filename_buf));
-            if (ImGui::Button("Export Image"))
-            {
-                export_image(image_filename_buf, render_state, state);
                 glViewport(0, 0, SCREEN_WIDTH_PIXELS, SCREEN_HEIGHT_PIXELS);
             }
         }
