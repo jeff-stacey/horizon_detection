@@ -48,7 +48,7 @@ SOFTWARE.
 *******************************************************/
 
 pixel* conv2d(pixel A, pixel K) {
-  static int C[M][N];
+  static pixel C[M][N];
 
 
 
