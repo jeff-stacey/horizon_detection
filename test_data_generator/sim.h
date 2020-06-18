@@ -11,6 +11,7 @@ struct SimulationState
     uint32_t camera_h_res = 160;
     uint32_t camera_v_res = 120;
     Quaternion camera;
+    Vec3 nadir;
 
     bool load_state(const char* filename);
     void save_state(char* filename);

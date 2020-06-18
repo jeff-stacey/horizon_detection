@@ -135,6 +135,12 @@ void start_gui(RenderState render_state, SimulationState state)
             if (keys.held.e) roll -= 0.1f;
 
             state.camera = state.camera * Quaternion::roll(roll) * Quaternion::pitch(pitch) * Quaternion::yaw(yaw);
+
+            // calculate nadir vector
+            float camera_matrix[9];
+            state.camera.inverse().to_matrix(camera_matrix);
+            state.nadir = Vec3(-camera_matrix[2], -camera_matrix[5], -camera_matrix[8]);
+            ImGui::InputFloat3("Nadir", (float*)&state.nadir);
         }
 
         // ---------
