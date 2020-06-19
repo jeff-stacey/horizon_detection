@@ -22,10 +22,61 @@ SOFTWARE.
 
 #include <stdio.h>
 #include "xil_printf.h"
+#include "conv.h"
+
+#define TEST 1
 
 int main() {
 
     print("Hello world\n\r");
+
+        if (TEST) {
+        printf("Helper Function Testing Start\n\r");
+
+        /*Create/Import test image as C array*/
+        printf("Importing Test Image\n\r");
+        //TODO
+        pixel TestImg[120][160] = {};    //PLACEHOLDER
+
+        /*Perform Helper Operations*/
+        printf("Applying functions to image\n\r");
+        //Create x-direction gradient map output
+        pixel edge_x[120][160];               
+        pixel kernel_x[3][3] = {
+            //Using SOBEL kernel
+            {-1, 0, 1},
+            {-2, 0, 2},
+            {-1, 0, 1}
+        };
+        //Create y-direction gradient map output
+        pixel edge_y[120][160];
+        pixel kernel_y[3][3] = {
+            //Using SOBEL kernel
+            {1, 2, 1},
+            {0, 0, 0},
+            {-1, -2, -1}
+        };
+
+        // Perform convolutions
+        conv2d(TestImg, edge_x, kernel_x);
+        printf("x-direction 2D-convolution complete\n\r");
+        conv2d(TestImg, edge_y, kernel_y);
+        printf("y-direction 2D-convolution complete\n\r");
+
+        //Combine images to obtain edge map and direction map
+        pixel grad[120][160];
+        pixel theta[120][160];
+        img_hypot(edge_x, edge_y, grad);
+        printf("Combined x and y edge maps using img_hypot\n\r");
+        img_theta(edge_x, edge_y, theta);
+        printf("Obtained direction map using img_theta\n\r");
+
+
+        /*Save results into files for comparison*/
+        print("Saving results to file\n\r");
+
+
+    }
 
     return 0;
 }
