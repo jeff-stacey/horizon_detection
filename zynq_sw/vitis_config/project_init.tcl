@@ -19,7 +19,14 @@ platform create -name "zcu104" -hw ../vitis_config/zcu104.xsa -os standalone -pr
 
 # Create our app for the Cortex R5
 puts "Creating R5 app"
-app create -name $app_name -platform zcu104 -proc psu_cortexr5_0 -os standalone -template {Empty Application}
+if [ catch { app create -name $app_name -platform zcu104 -proc psu_cortexr5_0 -os standalone -template {Empty Application} } ] {
+    puts "R5 App already exists. Skipping app creation. If you really need to regenerate the app, delete the workspace directory and run this again."
+} else {
+}
+
+puts "Adding linker flag for math library"
+if [ catch { app config -name $app_name -add libraries {m} } ] {
+}
 
 # Import source files
 puts "Importing source files"
