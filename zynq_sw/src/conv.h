@@ -20,8 +20,11 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
+#ifndef CONV_HEADER
+#define CONV_HEADER
+
 #include <stdio.h>
-#include <math.h>
+#include "math.h"
 
 
 /*TODO: HELPER FUNCTIONS FOR EDGE DETECTION
@@ -70,7 +73,7 @@ SOFTWARE.
 pixel conv2d(pixel A, pixel C, pixel K) {
     short rows = r_dim;
     short cols = c_dim;
-    short a, b, i, j, k, sum;
+    short a, b, i, j, sum;
 
     short max = 255; //Maximum pixel value
 
@@ -99,7 +102,7 @@ pixel conv2d(pixel A, pixel C, pixel K) {
             if (sum < 0) sum = 0;
             if (sum > max) sum = max;
             C[i][j] = sum;
-        } 
+        }
     }
     return C;
 };
@@ -134,7 +137,7 @@ void conv1d(pixel A[r_dim][c_dim], pixel K_r[k_dim], pixel K_c[k_dim], pixel C[r
  *             C - Result Matrix
  *             r - # of rows in matricies
  *             c - # of columns in matricies
- * 
+ *
 **********************************************************************/
 void img_hypot (pixel X[r_dim][c_dim], pixel Y[r_dim][c_dim], pixel C[r_dim][c_dim]) {
 
@@ -156,7 +159,7 @@ void img_hypot (pixel X[r_dim][c_dim], pixel Y[r_dim][c_dim], pixel C[r_dim][c_d
  *             C - Result Matrix
  *             r - # of rows in matricies
  *             c - # of columns in matricies
- * 
+ *
 **********************************************************************/
 void img_theta (pixel X[r_dim][c_dim], pixel Y[r_dim][c_dim], pixel C[r_dim][c_dim]) {
 
@@ -177,8 +180,8 @@ void img_theta (pixel X[r_dim][c_dim], pixel Y[r_dim][c_dim], pixel C[r_dim][c_d
  *             B   - Result Matrix
  *             r   - # of rows in matricies
  *             c   - # of columns in matricies
- *             u_t - Upper threshold value 
- * 
+ *             u_t - Upper threshold value
+ *
 **********************************************************************/
 
 void edge2bin(pixel E[r_dim][c_dim], pixel B[r_dim][c_dim], short u_t) {
