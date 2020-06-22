@@ -18,13 +18,6 @@
 #OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 #SOFTWARE.
 
-# TODO convert output edge map to array containing all edge points and their indicies (indicating their location)
-
-##################################################
-#                                                #
-#  Simple Edge Detection Comparision Test Script #
-#                                                #
-##################################################
 import PIL.Image as pilim
 import matplotlib.pyplot as plt
 import matplotlib.image as im
@@ -32,20 +25,7 @@ import scipy.signal as sig
 import numpy as np
 
 ####################################
-#              Steps               #
-####################################
-
-# 1. Ensure PIL/pillow, matplotlib, numpy and scipy are installed
-# 2. Put the image to be evaluated in the same directory as this script
-# 3. update the "currentImage" variable with the images filename (include the .png)
-# 4. Run the Script!
-
-# NOTE: Don't worry if the output is a black image, the image data is all 0 and 1
-#       and so the output will look basically uniform. If you want to visualize the
-#       edge just modify Z[i,j] in the 'else' case in edge to bin as shown in the function
-
-####################################
-#         Helper Function(s)       #
+#         Helper Functions         #
 ####################################
 
 # Basic Conversion from Gradient Image to Binary Edge Map
@@ -60,7 +40,6 @@ def edge2bin(E, highThresh):
         Z[i,j] = 1
         #Z[i,j] = 255 
         #if you want to visualize the edge choose 255
-
   return Z
 
 #Save numpy array in image format
@@ -82,17 +61,16 @@ def edge2csv(A, thresh, fname):
   np.savetxt(fname, E, fmt='%1d', delimiter=",")
   return E
       
-
 #################################
 #         Edge Detection        #
 #################################
 #
-#   Inputs: image  : 120x160 input image
-#           mode   : 0 - Sobel
-#                    1 - Prewitt
-#                    2 - Canney
-#           output : 0 - Just Edges (CSV)
-#                    1 - Whole Image (PNG)
+#   Inputs: image --> 120x160 input image
+#           mode  --> 0 - Sobel
+#                     1 - Prewitt
+#                     2 - Canny
+#           output -> 0 - Just Edges (CSV)
+#                     1 - Whole Image (PNG)
 #
 
 def edge_detect(image, mode, output):
