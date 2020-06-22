@@ -1,3 +1,28 @@
+<<<<<<< HEAD
+=======
+#Copyright (c) 2020 Ryan Blais, Hugo Burd, Byron Kontou, and Jeff Stacey
+
+#Permission is hereby granted, free of charge, to any person obtaining a copy of
+#this software and associated documentation files (the "Software"), to deal in
+#the Software without restriction, including without limitation the rights to
+#use, copy, modify, merge, publish, distribute, sublicense, and/or sell copies
+#of the Software, and to permit persons to whom the Software is furnished to do
+#so, subject to the following conditions:
+
+#The above copyright notice and this permission notice shall be included in all
+#copies or substantial portions of the Software.
+
+#THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+#IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+#FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+#AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+#LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+#OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+#SOFTWARE.
+
+# TODO convert output edge map to array containing all edge points and their indicies (indicating their location)
+
+>>>>>>> added output to CSV of all edge points
 ##################################################
 #                                                #
 #  Simple Edge Detection Comparision Test Script #
@@ -26,8 +51,8 @@ import numpy as np
 #       Important Variables        #
 ####################################
 
-currentImage = 'test_image_1.png' #Current image to perform edge detection on
-plotShow = True #Toggle comparison plot output
+currentImage = 'test_image_5.png' #Current image to perform edge detection on
+plotShow = False #Toggle comparison plot output
 
 ####################################
 #            Get Image             #
@@ -61,6 +86,21 @@ def arr2png(A, fname):
   A_im = pilim.fromarray(A)
   A_im.save(fname, 'png')
 
+#Convert edge map to csv file of edge points using threshold
+def edge2csv(A, thresh, fname):
+  M,N = A.shape
+  E = np.empty((0,2), int)
+  #E = np.empty((1,2) , dtype=np.uint8); #initialize output arr
+
+  #TODO Figure out how to initialize a 2x1 empty array
+  for i in range(0,M):
+    for j in range(0,N):
+      if (A[i,j] >= thresh):
+        E = np.append(E, [[i, j]], axis=0)
+      
+  np.savetxt(fname, E, fmt='%1d', delimiter=",")
+      
+
 
 ####################################
 #       Sobel edge detection       #
@@ -80,6 +120,7 @@ C = np.hypot(Cx,Cy)
 #Output Edge Map
 C_bin = edge2bin(C, 2)
 arr2png(C_bin, 'sobel_BEM.png')
+edge2csv(C_bin, 1, "sobel.csv")
 
 ####################################
 #     Prewitt edge detection       #
@@ -99,6 +140,7 @@ D = np.hypot(Dx,Dy)
 #Output Edge Map
 D_bin = edge2bin(D, 2)
 arr2png(D_bin, 'prewitt_BEM.png')
+edge2csv(D_bin, 1, "prewitt.csv")
 
 ####################################
 #       Canny edge detection       #
@@ -188,6 +230,7 @@ for i in range(1, M-1):
 #Output Edge Map
 Z_bin = edge2bin(Z_thresh, 2)
 arr2png(Z_bin, 'canny_BEM.png')
+edge2csv(Z_thresh, 1, "canny.csv")
 
 ########################
 #     Plot Settings    #

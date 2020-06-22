@@ -19,8 +19,6 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
-<<<<<<< HEAD:LICENSE.md
-=======
 */
 
 #include <stdio.h>
@@ -83,4 +81,3 @@ int main() {
 
     return 0;
 }
->>>>>>> removed raw2arr function. changes made to build successfully in Vitis:zynq_sw/src/hello.c
