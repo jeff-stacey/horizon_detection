@@ -48,22 +48,7 @@ import numpy as np
 #       edge just modify Z[i,j] in the 'else' case in edge to bin as shown in the function
 
 ####################################
-#       Important Variables        #
-####################################
-
-currentImage = 'test_image_5.png' #Current image to perform edge detection on
-plotShow = False #Toggle comparison plot output
-
-####################################
-#            Get Image             #
-####################################
-
-image = im.imread(currentImage)
-print("Current Image:", currentImage)
-print("Data Type:", image.dtype, "\n", "Dimensions:", image.shape)
-
-####################################
-#           Function(s)            #
+#         Helper Function(s)       #
 ####################################
 
 # Basic Conversion from Gradient Image to Binary Edge Map
@@ -87,171 +72,212 @@ def arr2png(A, fname):
   A_im.save(fname, 'png')
 
 #Convert edge map to csv file of edge points using threshold
+# Returns the array of edge points
 def edge2csv(A, thresh, fname):
   M,N = A.shape
   E = np.empty((0,2), int)
-  #E = np.empty((1,2) , dtype=np.uint8); #initialize output arr
 
-  #TODO Figure out how to initialize a 2x1 empty array
   for i in range(0,M):
     for j in range(0,N):
       if (A[i,j] >= thresh):
         E = np.append(E, [[i, j]], axis=0)
       
   np.savetxt(fname, E, fmt='%1d', delimiter=",")
+  return E
       
 
+#################################
+#         Edge Detection        #
+#################################
+#
+#   Inputs: image  : 120x160 input image
+#           mode   : 0 - Sobel
+#                    1 - Prewitt
+#                    2 - Canney
+#           output : 0 - Just Edges (CSV)
+#                    1 - Whole Image (PNG)
+#
 
-####################################
-#       Sobel edge detection       #
-####################################
+def edge_detect(image, mode, output):
 
-#Define Sobel convolution kernels 
-Gx = np.array([[ -1, 0, 1], [ -2,  0,  2], [-1, 0, 1]])
-Gy = np.array([[ 1, 2, 1], [0, 0, 0], [-1, -2, -1]])
+  if (mode == 2):
+    #Apply Gaussian blur (use Gaussian 5x5 kernel)
+    B_gauss = (1/16) * np.array([[ 1, 2, 1], [ 2,  4,  2], [1, 2, 1]])
+    image = sig.convolve2d(image, B_gauss, mode='same', boundary='fill', fillvalue=0)
+    # 3x3 blur kernel source: https://en.wikipedia.org/wiki/Kernel_(image_processing)
 
-# Perform Convolution (uses zero padding method for the edge pixels)
-Cx = sig.convolve2d(image, Gx, mode='same', boundary='fill', fillvalue=0)
-Cy = sig.convolve2d(image, Gy, mode='same', boundary='fill', fillvalue=0)
+  #Define Kernel based on the mode
+  if(mode == 0 or mode ==2):
+    #Define Sobel convolution kernels 
+    Kx = np.array([[ -1, 0, 1], [ -2,  0,  2], [-1, 0, 1]])
+    Ky = np.array([[ 1, 2, 1], [0, 0, 0], [-1, -2, -1]])
+  elif (mode == 1):
+    #Define Prewitt convolution kernels 
+    Kx = np.array([[ 1, 0, -1], [ 1,  0,  -1], [1, 0, -1]])
+    Ky = np.array([[ 1, 1, 1], [0, 0, 0], [-1, -1, -1]])
+  else:
+    print('Invladid mode entered: ', mode)
+    print('\nSetting kernels to Sobel')
+    Kx = np.array([[ -1, 0, 1], [ -2,  0,  2], [-1, 0, 1]])
+    Ky = np.array([[ 1, 2, 1], [0, 0, 0], [-1, -2, -1]])
 
-#Combine results
-C = np.hypot(Cx,Cy)
+  # Perform Convolution (uses zero padding method for the edge pixels)
+  Cx = sig.convolve2d(image, Kx, mode='same', boundary='fill', fillvalue=0)
+  Cy = sig.convolve2d(image, Ky, mode='same', boundary='fill', fillvalue=0)
 
-#Output Edge Map
-C_bin = edge2bin(C, 2)
-arr2png(C_bin, 'sobel_BEM.png')
-edge2csv(C_bin, 1, "sobel.csv")
+  #Combine results
+  C = np.hypot(Cx,Cy)
+  if (mode == 2):
+    theta = np.arctan2(Cy, Cx)
 
-####################################
-#     Prewitt edge detection       #
-####################################
+  if (mode == 0 ):
+    if (output == 0):
+      out = edge2csv(C, 1, "edge_sobel.csv")
+    elif (output == 1):
+      arr2png(C, 'gradimg_sobel.png')
+      out = [];
+    else:
+      print('Invladid output entered: ', output)
+      out = [];
+    return out
+  elif (mode == 1):
+    if (output == 0):
+      out = edge2csv(C, 1, "edge_prewitt.csv")
+    elif (output == 1):
+      arr2png(C, 'gradimg_prewitt.png')
+      out = [];
+    else:
+      print('Invladid output entered: ', output)
+      out = [];
+    return out
+  else:
+    pass
 
-#Define Prewitt convolution kernels 
-Px = np.array([[ 1, 0, -1], [ 1,  0,  -1], [1, 0, -1]])
-Py = np.array([[ 1, 1, 1], [0, 0, 0], [-1, -1, -1]])
+  # Non-maximum Suppression (edge thinning)
+  # Source: https://towardsdatascience.com/canny-edge-detection-step-by-step-in-python-computer-vision-b49c3a2d8123
+  M,N = C.shape
+  Z = np.zeros((M,N), dtype=np.float32) #initialize our output array
+  angle = theta * 180. / np.pi #init the edge direction map
+  angle[angle < 0] += 180 
 
-# Perform Convolution (uses zero padding method for the edge pixels)
-Dx = sig.convolve2d(image, Px, mode='same', boundary='fill', fillvalue=0)
-Dy = sig.convolve2d(image, Py, mode='same', boundary='fill', fillvalue=0)
+  for i in range(1, M-1):
+    for j in range (1, N-1):
+      try:
+        q = 255
+        r = 255
+        #angle 0
+        if (0 <= angle[i,j] < 22.5) or (157.5 <= angle[i,j] <= 180):
+          q = C[i, j+1]
+          r = C[i, j-1]
+        #angle 45
+        elif (22.5 <= angle[i,j] < 67.5):
+          q = C[i+1, j-1]
+          r = C[i-1, j+1]
+        #angle 90
+        elif (67.5 <= angle[i,j] < 112.5):
+          q = C[i+1, j]
+          r = C[i-1, j]
+        #angle 135
+        elif (112.5 <= angle[i,j] < 157.5):
+          q = C[i-1, j-1]
+          r = C[i+1, j+1]
 
-#Combine results
-D = np.hypot(Dx,Dy)
+        if (C[i,j] >= q) and (C[i,j] >= r):
+          Z[i,j] = C[i,j]
+        else:
+          Z[i,j] = 0
 
-#Output Edge Map
-D_bin = edge2bin(D, 2)
-arr2png(D_bin, 'prewitt_BEM.png')
-edge2csv(D_bin, 1, "prewitt.csv")
+      except IndexError as e:
+        pass
 
-####################################
-#       Canny edge detection       #
-####################################
+  #Step 4: Double Thresholding
+  lowRatio = 0.05
+  highRatio = 0.09
 
-# Step 1: Apply Gaussian blur (use Gaussian 5x5 kernel)
-B_gauss = (1/16) * np.array([[ 1, 2, 1], [ 2,  4,  2], [1, 2, 1]])
-B_blur = sig.convolve2d(image, B_gauss, mode='same', boundary='fill', fillvalue=0)
-# 3x3 blur kernel source: https://en.wikipedia.org/wiki/Kernel_(image_processing)
+  highThresh = Z.max() * highRatio
+  lowThresh = highThresh * lowRatio
 
-#Step 2: Obtain the Sobel edge intensity and direction matricies
-Bx = sig.convolve2d(B_blur, Gx, mode='same', boundary='fill', fillvalue=0)
-By = sig.convolve2d(B_blur, Gy, mode='same', boundary='fill', fillvalue=0)
+  Z_thresh = np.zeros((M,N), dtype=np.int32)
 
-B = np.hypot(Bx,By)
-theta = np.arctan2(By, Bx)
-
-#Step 3: Non-maximum Suppression (edge thinning)
-# Source: https://towardsdatascience.com/canny-edge-detection-step-by-step-in-python-computer-vision-b49c3a2d8123
-M,N = B.shape
-Z = np.zeros((M,N), dtype=np.float32) #initialize our output array
-angle = theta * 180. / np.pi #init the edge direction map
-angle[angle < 0] += 180 
-
-for i in range(1, M-1):
-  for j in range (1, N-1):
-    try:
-      q = 255
-      r = 255
-      #angle 0
-      if (0 <= angle[i,j] < 22.5) or (157.5 <= angle[i,j] <= 180):
-        q = B[i, j+1]
-        r = B[i, j-1]
-      #angle 45
-      elif (22.5 <= angle[i,j] < 67.5):
-        q = B[i+1, j-1]
-        r = B[i-1, j+1]
-      #angle 90
-      elif (67.5 <= angle[i,j] < 112.5):
-        q = B[i+1, j]
-        r = B[i-1, j]
-      #angle 135
-      elif (112.5 <= angle[i,j] < 157.5):
-        q = B[i-1, j-1]
-        r = B[i+1, j+1]
-
-      if (B[i,j] >= q) and (B[i,j] >= r):
-        Z[i,j] = B[i,j]
-      else:
-        Z[i,j] = 0
-
-    except IndexError as e:
-      pass
-
-#Step 4: Double Thresholding
-lowRatio = 0.05
-highRatio = 0.09
-
-highThresh = Z.max() * highRatio
-lowThresh = highThresh * lowRatio
-
-Z_thresh = np.zeros((M,N), dtype=np.int32)
-
-weak = np.int32(25)
-strong = np.int32(255)
+  weak = np.int32(25)
+  strong = np.int32(255)
     
-strong_i, strong_j = np.where(Z >= highThresh)
-zeros_i, zeros_j = np.where(Z < lowThresh)
+  strong_i, strong_j = np.where(Z >= highThresh)
+  zeros_i, zeros_j = np.where(Z < lowThresh)
     
-weak_i, weak_j = np.where((Z <= highThresh) & (Z >= lowThresh))
+  weak_i, weak_j = np.where((Z <= highThresh) & (Z >= lowThresh))
     
-Z_thresh[strong_i, strong_j] = strong
-Z_thresh[weak_i, weak_j] = weak
+  Z_thresh[strong_i, strong_j] = strong
+  Z_thresh[weak_i, weak_j] = weak
 
-#Step 5: Hysteresis Edge Tracking
-for i in range(1, M-1):
-  for j in range(1, N-1):
-    if (Z_thresh[i,j] == weak):
-      if((Z_thresh[i+1, j-1] == strong) or (Z_thresh[i+1, j] == strong) or (Z_thresh[i+1, j+1] == strong)
-        or (Z_thresh[i, j-1] == strong) or (Z_thresh[i, j+1] == strong)
-        or (Z_thresh[i-1, j-1] == strong) or (Z_thresh[i-1, j] == strong) or (Z_thresh[i-1, j+1] == strong)):
-        Z_thresh[i, j] = strong
-      else:
-        Z_thresh[i, j] = 0
+  #Step 5: Hysteresis Edge Tracking
+  for i in range(1, M-1):
+    for j in range(1, N-1):
+      if (Z_thresh[i,j] == weak):
+        if((Z_thresh[i+1, j-1] == strong) or (Z_thresh[i+1, j] == strong) or (Z_thresh[i+1, j+1] == strong)
+          or (Z_thresh[i, j-1] == strong) or (Z_thresh[i, j+1] == strong)
+          or (Z_thresh[i-1, j-1] == strong) or (Z_thresh[i-1, j] == strong) or (Z_thresh[i-1, j+1] == strong)):
+          Z_thresh[i, j] = strong
+        else:
+          Z_thresh[i, j] = 0
 
 
-#Output Edge Map
-Z_bin = edge2bin(Z_thresh, 2)
-arr2png(Z_bin, 'canny_BEM.png')
-edge2csv(Z_thresh, 1, "canny.csv")
+  if (output == 0):
+    out = edge2csv(Z_thresh, 1, "canny.csv")
+  elif (output == 1):
+    arr2png(Z_bin, 'canny_BEM.png')
+    out = [];
+  else:
+    print('Invladid output entered: ', output) 
+    out = [];
+  return out
+
+
+########################
+#       Testing        #
+########################
+
+# Important Variables
+currentImage = 'test_image_5.png' #Current image to perform edge detection on
+plotShow = False #Toggle comparison plot output
+
+# Get Image
+image = im.imread(currentImage)
+print("Current Image:", currentImage)
+print("Data Type:", image.dtype, "\n", "Dimensions:", image.shape)
+
+# Sobel Test
+test1 = edge_detect(image, 0, 0)
+print('Sobel Edge Index Array:\n', test1)
+
+# Prewitt Test
+test2 = edge_detect(image, 1, 0)
+print('\nPrewitt Edge Index Array:\n', test2)
+
+# Canney Test
+test3 = edge_detect(image, 2, 0)
+print('\nCanny Edge Index Array:\n', test3)
 
 ########################
 #     Plot Settings    #
 ########################
 
 #Setup plot
-f, axarr = plt.subplots(1,4)
-axarr[0].set_title("Original Image")
-axarr[0].imshow(image)
+#f, axarr = plt.subplots(1,4)
+#axarr[0].set_title("Original Image")
+#axarr[0].imshow(image)
 
 #Sobel
-axarr[1].set_title("Sobel Edge Map")
-axarr[1].imshow(edge2bin(C, 2))
+#axarr[1].set_title("Sobel Edge Map")
+#axarr[1].imshow(edge2bin(C, 2))
 
 #Prewitt
-axarr[2].set_title("Prewitt Edge Map")
-axarr[2].imshow(edge2bin(D, 2))
+#axarr[2].set_title("Prewitt Edge Map")
+#axarr[2].imshow(edge2bin(D, 2))
 
 #Halfway Canny
-axarr[3].set_title("Canny Edge Map")
-axarr[3].imshow(edge2bin(Z_thresh, 2))
+#axarr[3].set_title("Canny Edge Map")
+#axarr[3].imshow(edge2bin(Z_thresh, 2))
 
 # Show plot if desired
 if plotShow:
