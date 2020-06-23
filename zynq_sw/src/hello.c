@@ -25,6 +25,12 @@ SOFTWARE.
 #include "conv.h"
 
 #define TEST 1
+#define DEBUG
+
+//TODO
+// The image will be here. The attribute places it in a special section.
+// This array's starting address is 0x0011000 as specified in the linker file.
+pixel __attribute__((section (".imageData"))) TestImg[120][160];
 
 int main() {
 
@@ -32,11 +38,6 @@ int main() {
 
         if (TEST) {
         printf("Helper Function Testing Start\n\r");
-
-        /*Create/Import test image as C array*/
-        printf("Importing Test Image\n\r");
-        //TODO
-        pixel TestImg[120][160] = {};    //PLACEHOLDER
 
         /*Perform Helper Operations*/
         printf("Applying functions to image\n\r");
