@@ -21,7 +21,15 @@ SOFTWARE.
 */
 
 #include <stdio.h>
+#include <stdint.h>
 #include "xil_printf.h"
+
+typedef uint8_t pixel;
+
+//TODO
+// The image will be here. The attribute places it in a special section.
+// This array's starting address is 0x0011000 as specified in the linker file.
+pixel __attribute__((section (".imageData"))) TestImg[120][160];
 
 int main() {
 

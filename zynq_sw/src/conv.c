@@ -66,12 +66,3 @@ pixel* conv2d(pixel A, pixel K) {
 pixel* sep_conv2d(pixel A, pixel K) {
 
 };
-
-
-
-int main() {
-
-    print("Hello world\n\r");
-
-    return 0;
-}
