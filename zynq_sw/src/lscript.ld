@@ -43,6 +43,11 @@ SECTIONS
    *(.boot)
 } > psu_r5_0_atcm_MEM_0
 
+/* Place the image data at a known address within psu_r5_ddr_0_MEM_0 */
+.imageData 0x110000 : {
+   KEEP (*(.imageData))
+}
+
 .text : {
    *(.text)
    *(.text.*)
