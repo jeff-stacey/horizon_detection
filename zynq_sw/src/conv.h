@@ -24,6 +24,7 @@ SOFTWARE.
 #define CONV_HEADER
 
 #include <stdio.h>
+#include <stdint.h>
 #include "math.h"
 
 /*TODO: HELPER FUNCTIONS FOR EDGE DETECTION
@@ -43,7 +44,7 @@ SOFTWARE.
 ********************/
 
 /* Types */
-#define pixel char //8-bit images, change if 14-bit
+#define pixel uint8_t //8-bit images, change if 14-bit
 
 /*Image Dimensions*/
 #define r_dim 120
@@ -68,11 +69,11 @@ SOFTWARE.
  *
 *******************************************************/
 void conv2d(pixel A[r_dim][c_dim], pixel C[r_dim][c_dim], pixel K[k_dim][k_dim]) {
-    short rows = r_dim;
-    short cols = c_dim;
-    short a, b, i, j, sum;
+    uint16_t rows = r_dim;
+    uint16_t cols = c_dim;
+    uint16_t a, b, i, j, sum;
 
-    short max = 255; //Maximum pixel value
+    uint16_t max = 255; //Maximum pixel value
 
     /*Iterate through image*/
     for (i=0 ; 1< rows ; i++) {
@@ -126,7 +127,7 @@ void conv1d(pixel A[r_dim][c_dim], pixel K_r[k_dim], pixel K_c[k_dim], pixel C[r
 **********************************************************************/
 void img_hypot (pixel X[r_dim][c_dim], pixel Y[r_dim][c_dim], pixel C[r_dim][c_dim]) {
 
-    short i, j;
+    uint16_t i, j;
     double result;
 
     for (i=0; i < r_dim-1 ; i++) {
