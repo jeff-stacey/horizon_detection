@@ -23,3 +23,4 @@ struct RenderState
 RenderState render_init(unsigned int screen_width, unsigned int screen_height);
 void render_frame(RenderState render_state, SimulationState state);
 void export_image(const char* filename, RenderState render_state, SimulationState state);
+void export_binary(const char* filename, RenderState render_state, SimulationState state);

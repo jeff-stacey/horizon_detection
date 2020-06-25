@@ -109,11 +109,18 @@ void start_gui(RenderState render_state, SimulationState state)
             if (ImGui::Button("Export"))
             {
                 char* file_extension = filename_buf + strlen(filename_buf);
+
                 strncpy(file_extension, ".png", 4);
                 file_extension[4] = 0;
                 export_image(filename_buf, render_state, state);
+
                 strncpy(file_extension, ".hrz", 4);
                 state.save_state(filename_buf);
+
+                strncpy(file_extension, ".bin", 4);
+                export_binary(filename_buf, render_state, state);
+
+                strncpy(file_extension, "    ", 4);
 
                 glViewport(0, 0, SCREEN_WIDTH_PIXELS, SCREEN_HEIGHT_PIXELS);
             }

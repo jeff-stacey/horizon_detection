@@ -333,6 +333,35 @@ void export_image(const char* filename, RenderState render_state, SimulationStat
     stbi_flip_vertically_on_write(0);
 }
 
+void export_binary(const char* filename, RenderState render_state, SimulationState state)
+{
+    glViewport(0, 0, state.camera_h_res, state.camera_v_res);
+    render_frame(render_state, state);
+
+    int num_pixels = state.camera_h_res * state.camera_v_res;
+
+    uint16_t pixels[num_pixels];
+    glReadnPixels(
+        0, 0,
+        state.camera_h_res, state.camera_v_res,
+        GL_RED,             // we want a grayscale image
+        GL_UNSIGNED_SHORT,  // and 16-bit pixel values
+        sizeof(pixels),
+        pixels);
+
+    // the Lepton 3.5 data format actually only uses 14 bits per pixel
+    // with the upper two bits set to zero, so we'll discard the two LSb
+    
+    for (int i = 0; i < num_pixels; i++)
+    {
+        pixels[i] = pixels[i] >> 2;
+    }
+
+    FILE* fd = fopen(filename, "wb");
+    fwrite(pixels, sizeof(uint16_t), num_pixels, fd);
+    fclose(fd);
+}
+
 RenderState render_init(unsigned int screen_width, unsigned int screen_height)
 {
     RenderState render_state;
