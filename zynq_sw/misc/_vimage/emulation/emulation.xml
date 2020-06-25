@@ -1,0 +1,4 @@
+<?xml version="1.0"?>
+<xd:emulation xmlns:xd="http://www.xilinx.com/xd">
+    <xd:target xd:cpuType ="cortex-a53"/>
+</xd:emulation>

@@ -22,18 +22,27 @@ SOFTWARE.
 
 #include <stdio.h>
 #include <stdint.h>
-#include "xil_printf.h"
 
-typedef uint8_t pixel;
+#define IMG_ROWS 120
+#define IMG_COLS 160
 
-//TODO
-// The image will be here. The attribute places it in a special section.
-// This array's starting address is 0x0011000 as specified in the linker file.
-pixel __attribute__((section (".imageData"))) TestImg[120][160];
+typedef uint16_t pixel;
+
+pixel TestImg[120][160];
 
 int main() {
 
-    print("Hello world\n\r");
+    printf("Hello world\n\r");
+
+    for (int j = 0; j < IMG_COLS; j++)
+    {
+    	int column_acc = 0;
+    	for (int i = 0; i < IMG_ROWS; i++)
+    	{
+    		column_acc += TestImg[i][j];
+    	}
+    	printf("sum of column %3d is %d\n", j, column_acc);
+    }
 
     return 0;
 }

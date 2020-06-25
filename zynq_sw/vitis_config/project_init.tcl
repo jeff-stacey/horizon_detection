@@ -52,4 +52,8 @@ foreach source_file [glob -tails -directory ../src *] {
     
 
 # Build the app
-#app build -name $app_name
+app build -name $app_name
+
+# copy in the stuff QEMU needs
+exec cp -r ../misc/_vimage $app_name/Debug/_vimage
+exec gunzip $app_name/Debug/_vimage/emulation/sd_card.img.gz
