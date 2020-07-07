@@ -100,40 +100,12 @@ void conv2d(pixel A[r_dim][c_dim], pixel C[r_dim][c_dim], pixel K[k_dim][k_dim])
                     }
                 }
             }
-<<<<<<< HEAD
-            /*Minor Thresholding*/
-=======
             /*Sum Thresholding*/
->>>>>>> d3fda0f9068ea0ba57976872bcf57de0c51baeb8
             if (sum < 0) sum = 0;
             if (sum > max) sum = max;
             C[i][j] = sum;
         }
     }
-<<<<<<< HEAD
-    return C;
-};
-
-
-
-/*******************************************************
- *    Seperable Convolve 2D
-/********************************************************************
- *    1D Convolution
-
- *    Inputs:  A - 120x160 Image Matrix
- *             C - 120x160 Result Matrix
- *             K - 3x3 Seperable Convolution Kernel
- * 
-
- *    Outputs: C - Modified Result Matrix
-*******************************************************/
-
-pixel* sep_conv2d(pixel A[M][N], pixel K[k_dim][k_dim]) {
-
-};
-
-=======
 };
 
 /********************************************************************
@@ -144,7 +116,6 @@ pixel* sep_conv2d(pixel A[M][N], pixel K[k_dim][k_dim]) {
  *             K_r - 1x3 Seperated Section of Kernel (row vector)
  *
 **********************************************************************/
->>>>>>> d3fda0f9068ea0ba57976872bcf57de0c51baeb8
 void conv1d(pixel A[r_dim][c_dim], pixel K_r[k_dim], pixel K_c[k_dim], pixel C[r_dim][c_dim]) {
     //TODO
 };
@@ -218,88 +189,4 @@ void edge2bin(pixel E[r_dim][c_dim], pixel B[r_dim][c_dim], short u_t) {
     };
 };
 
-<<<<<<< HEAD
-/********************************************************************
- *    1D Raw Image Data to 2D Image Array
- *    Inputs: A - 1D C integer array of Raw Image Data 
- *            w - Width of the output image ( in pixels)
- *            h - Height of the output image ( in pixels)
- * 
- *    Outputs: C - 2D C array of Image data (char)
- * 
-**********************************************************************/
-pixel raw2arr(int A[num_pix], short w, short h) {
-
-    pixel C[w][h];
-    short i, r_idx, c_idx;
-
-    r_idx = 0;
-    for(i = 0; i < num_pix-1; i++){
-        /*Check for end or row*/
-        c_idx = i%w;
-        if (c_idx == 0) {
-            /*Go to next row*/
-            r_idx++;
-        }
-        C[r_idx][c_idx] = (pixel)A[i];
-    }
-
-    return C;
-};
-
-int main() {
-
-    if (TEST) {
-        printf("Helper Function Testing Start\n\r");
-
-        /*Create/Import test image as C array*/
-        printf("Importing Test Image\n\r");
-        //TODO
-        pixel TestImg[120][160];    //PLACEHOLDER
-
-        /*Perform Helper Operations*/
-        printf("Applying functions to image\n\r");
-        //Create x-direction gradient map output
-        pixel edge_x[120][160];               
-        pixel kernel_x[3][3] = {
-            //Using SOBEL kernel
-            {-1, 0, 1},
-            {-2, 0, 2},
-            {-1, 0, 1}
-        };
-        //Create y-direction gradient map output
-        pixel edge_y[120][160];
-        pixel kernel_y[3][3] = {
-            //Using SOBEL kernel
-            {1, 2, 1},
-            {0, 0, 0},
-            {-1, -2, -1}
-        };
-
-        // Perform convolutions
-        conv2d(TestImg, edge_x, kernel_x);
-        printf("x-direction 2D-convolution complete\n\r");
-        conv2d(TestImg, edge_y, kernel_y);
-        printf("y-direction 2D-convolution complete\n\r");
-
-        //Combine images to obtain edge map and direction map
-        pixel grad[120][160];
-        pixel theta[120][160];
-        img_hypot(edge_x, edge_y, grad);
-        printf("Combined x and y edge maps using img_hypot\n\r");
-        img_theta(edge_x, edge_y, theta);
-        printf("Obtained direction map using img_theta\n\r");
-
-
-        /*Save results into files for comparison*/
-        print("Saving results\n\r");
-
-
-    }
-
-    return 0;
-}
-
-=======
 #endif
->>>>>>> d3fda0f9068ea0ba57976872bcf57de0c51baeb8

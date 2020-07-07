@@ -21,16 +21,6 @@ SOFTWARE.
 */
 
 #include <stdio.h>
-<<<<<<< HEAD:zynq_sw/src/main.c
-#include <stdint.h>
-
-#define IMG_ROWS 120
-#define IMG_COLS 160
-
-typedef uint16_t pixel;
-
-pixel TestImg[120][160];
-=======
 #include "xil_printf.h"
 #include "conv.h"
 
@@ -41,7 +31,6 @@ pixel TestImg[120][160];
 // The image will be here. The attribute places it in a special section.
 // This array's starting address is 0x0011000 as specified in the linker file.
 pixel __attribute__((section (".imageData"))) TestImg[120][160];
->>>>>>> d3fda0f9068ea0ba57976872bcf57de0c51baeb8:zynq_sw/src/hello.c
 
 int main() {
 
