@@ -1,3 +1,5 @@
 *.o
+*.hrz
+*.png
 imgui.ini
 test_image_generator

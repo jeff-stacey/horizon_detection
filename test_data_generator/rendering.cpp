@@ -215,7 +215,7 @@ static GLuint link_program(GLint vshader, GLint fshader)
 
 static void make_perspective_matrix(float* data, float near, float far, float fov, float aspect_ratio)
 {
-    float csc_fov = sinf(fov);
+    float csc_fov = 1.0f / sinf(fov * 0.5f);
     float matrix_data[16] = 
     {
         csc_fov, 0.0f, 0.0f, 0.0f,
