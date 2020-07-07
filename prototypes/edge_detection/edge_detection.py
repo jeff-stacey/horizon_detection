@@ -26,7 +26,7 @@ import numpy as np
 #       Important Variables        #
 ####################################
 
-currentImage = 'test_image_1.png' #Current image to perform edge detection on
+currentImage = '/home/byron/Documents/horizon_detection/test_data_generator/test.png' #Current image to perform edge detection on
 plotShow = True #Toggle comparison plot output
 
 ####################################

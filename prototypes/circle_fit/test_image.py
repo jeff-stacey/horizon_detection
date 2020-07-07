@@ -93,8 +93,8 @@ for im, da in zip(images, metadata):
     ax.add_artist(circ)
     plt.show()
     
-    test_results.append({'image':im, 'nadir_actual_x':nad[0], 'nadir_actual_y':nad[1], 'nadir_actual_z':nad[2], 'nadir_predicted_x':nadir[0], 'nadir_predicted_y':nadir[1], 'nadir_predicted_z':nadir[2], 'error':np.linalg.norm(nadir-nad)/np.linalg.norm(nad), 'x_diff':nadir[0]-nad[0], 'y_diff':nadir[1]-nad[1], 'z_diff':nadir[2]-nad[2]})
-    break
+    test_results.append({'image':im, 'nadir_actual_x':nad[0], 'nadir_actual_y':nad[1], 'nadir_actual_z':nad[2], 'nadir_predicted_x':nadir[0], 'nadir_predicted_y':nadir[1], 'nadir_predicted_z':nadir[2], 'error':np.linalg.norm(nadir-nad)/np.linalg.norm(nad), 'vert_x': vert[0], 'vert_y': vert[1], 'above_horizon': not (r > np.linalg.norm(np.zeros(2) - centre))})
+    
     #test_results.append({'image':im,'nadir_actual_x':m[8],'nadir_actual_y':m[9],'nadir_actual_z':m[10], 'nadir_predicted_x':nadir[0], 'nadir_predicted_y':nadir[1], 'nadir_predicted_z':nadir[2]})
     
 test_results = pd.DataFrame(test_results)
