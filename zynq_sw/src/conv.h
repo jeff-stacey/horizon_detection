@@ -27,7 +27,10 @@ SOFTWARE.
 #include <stdint.h>
 #include "math.h"
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> d3fda0f9068ea0ba57976872bcf57de0c51baeb8
 /*TODO: HELPER FUNCTIONS FOR EDGE DETECTION
     - DONE 2d convolve (may have scaling issues in output around edges)
     - 1d convolve with image
@@ -67,8 +70,7 @@ SOFTWARE.
  *    Inputs:  A - 120x160 Image Matrix
  *             C - 120x160 Result Matrix
  *             K - 3x3 Convolution Kernel
- * 
- *    Outputs: C - Modified Result Matrix
+ *
 *******************************************************/
 void conv2d(pixel A[r_dim][c_dim], pixel C[r_dim][c_dim], pixel K[k_dim][k_dim]) {
     uint16_t rows = r_dim;
@@ -98,12 +100,17 @@ void conv2d(pixel A[r_dim][c_dim], pixel C[r_dim][c_dim], pixel K[k_dim][k_dim])
                     }
                 }
             }
+<<<<<<< HEAD
             /*Minor Thresholding*/
+=======
+            /*Sum Thresholding*/
+>>>>>>> d3fda0f9068ea0ba57976872bcf57de0c51baeb8
             if (sum < 0) sum = 0;
             if (sum > max) sum = max;
             C[i][j] = sum;
         }
     }
+<<<<<<< HEAD
     return C;
 };
 
@@ -126,6 +133,18 @@ pixel* sep_conv2d(pixel A[M][N], pixel K[k_dim][k_dim]) {
 
 };
 
+=======
+};
+
+/********************************************************************
+ *    1D Convolution
+ *    Inputs:  A - 120x160 Image Matrix
+ *             C - 120x160 Result Matrix
+ *             K_c - 3x1 Seperated Section of Kernel (column vector)
+ *             K_r - 1x3 Seperated Section of Kernel (row vector)
+ *
+**********************************************************************/
+>>>>>>> d3fda0f9068ea0ba57976872bcf57de0c51baeb8
 void conv1d(pixel A[r_dim][c_dim], pixel K_r[k_dim], pixel K_c[k_dim], pixel C[r_dim][c_dim]) {
     //TODO
 };
@@ -199,6 +218,7 @@ void edge2bin(pixel E[r_dim][c_dim], pixel B[r_dim][c_dim], short u_t) {
     };
 };
 
+<<<<<<< HEAD
 /********************************************************************
  *    1D Raw Image Data to 2D Image Array
  *    Inputs: A - 1D C integer array of Raw Image Data 
@@ -280,3 +300,6 @@ int main() {
     return 0;
 }
 
+=======
+#endif
+>>>>>>> d3fda0f9068ea0ba57976872bcf57de0c51baeb8

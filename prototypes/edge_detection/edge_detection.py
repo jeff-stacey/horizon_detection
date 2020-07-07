@@ -18,16 +18,6 @@
 #OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 #SOFTWARE.
 
-
-# TODO convert output edge map to array containing all edge points and their indicies (indicating their location)
-
-##################################################
-#                                                #
-#  Simple Edge Detection Comparision Test Script #
-#                                                #
-##################################################
-=======
->>>>>>> style fixes
 import PIL.Image as pilim
 import matplotlib.pyplot as plt
 import matplotlib.image as im

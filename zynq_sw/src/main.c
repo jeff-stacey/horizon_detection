@@ -21,6 +21,7 @@ SOFTWARE.
 */
 
 #include <stdio.h>
+<<<<<<< HEAD:zynq_sw/src/main.c
 #include <stdint.h>
 
 #define IMG_ROWS 120
@@ -29,6 +30,18 @@ SOFTWARE.
 typedef uint16_t pixel;
 
 pixel TestImg[120][160];
+=======
+#include "xil_printf.h"
+#include "conv.h"
+
+#define TEST 1
+#define DEBUG
+
+//TODO
+// The image will be here. The attribute places it in a special section.
+// This array's starting address is 0x0011000 as specified in the linker file.
+pixel __attribute__((section (".imageData"))) TestImg[120][160];
+>>>>>>> d3fda0f9068ea0ba57976872bcf57de0c51baeb8:zynq_sw/src/hello.c
 
 int main() {
 
@@ -42,6 +55,49 @@ int main() {
     		column_acc += TestImg[i][j];
     	}
     	printf("sum of column %3d is %d\n", j, column_acc);
+    }
+
+        if (TEST) {
+        printf("Helper Function Testing Start\n\r");
+
+        /*Perform Helper Operations*/
+        printf("Applying functions to image\n\r");
+        //Create x-direction gradient map output
+        pixel edge_x[120][160];               
+        pixel kernel_x[3][3] = {
+            //Using SOBEL kernel
+            {-1, 0, 1},
+            {-2, 0, 2},
+            {-1, 0, 1}
+        };
+        //Create y-direction gradient map output
+        pixel edge_y[120][160];
+        pixel kernel_y[3][3] = {
+            //Using SOBEL kernel
+            {1, 2, 1},
+            {0, 0, 0},
+            {-1, -2, -1}
+        };
+
+        // Perform convolutions
+        conv2d(TestImg, edge_x, kernel_x);
+        printf("x-direction 2D-convolution complete\n\r");
+        conv2d(TestImg, edge_y, kernel_y);
+        printf("y-direction 2D-convolution complete\n\r");
+
+        //Combine images to obtain edge map and direction map
+        pixel grad[120][160];
+        pixel theta[120][160];
+        img_hypot(edge_x, edge_y, grad);
+        printf("Combined x and y edge maps using img_hypot\n\r");
+        img_theta(edge_x, edge_y, theta);
+        printf("Obtained direction map using img_theta\n\r");
+
+
+        /*Save results into files for comparison*/
+        print("Saving results to file\n\r");
+
+
     }
 
     return 0;
