@@ -4,6 +4,7 @@ set app_name "horizon_detection"
 
 # Change this to use non-debug build - not tested
 set build_dir "../workspace/$app_name/Debug"
+set hw_dir "../workspace/zcu104/hw"
 
 set testing_dir [pwd]
 
@@ -32,12 +33,45 @@ if {$skip_build_idx >= 0} {
     app build -name $app_name
 }
 
-puts "Connecting to emulator"
-# annoyingly this doesn't have a return status so I can't check if it failed
-gdbremote connect localhost:1137
+set using_hw [lsearch -exact $argv "-b"]
+
+if {$using_hw >= 0} {
+    puts "Connecting to hardware"
+    # remove this argument from argv
+    set argv_new {}
+    foreach item $argv {
+        if {$item ni "-b"} {
+            lappend argv_new $item
+        }
+        set argv $argv_new
+    }
+
+    # get vitis install directory
+    set vitis_path [join [lrange [split [exec which xsct] /] 0 end-2] /]
+
+    #load the Zynq tools
+    source $vitis_path/scripts/vitis/util/zynqmp_utils.tcl
+
+    #load the script for dealing with the zynq PSU
+    source $hw_dir/psu_init.tcl
+
+    connect
+
+    targets -set -filter {name =~"PSU"}
+
+    psu_init
+
+} else {
+    puts "Connecting to emulator"
+    # annoyingly this doesn't have a return status so I can't check if it failed
+    gdbremote connect localhost:1137
+
+}
 
 puts "Selecting Cortex-R5 #0"
-targets 8
+targets -set -filter {name =~"*R5*0"}
+
+rst -processor
 
 puts "Copying executable into memory"
 dow $build_dir/$app_name.elf
