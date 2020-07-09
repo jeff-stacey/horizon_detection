@@ -22,6 +22,7 @@ SOFTWARE.
 
 #include <stdio.h>
 #include <stdint.h>
+#include "conv.h"
 
 #define IMG_ROWS 120
 #define IMG_COLS 160
