@@ -30,19 +30,28 @@ typedef uint16_t pixel;
 
 pixel TestImg[120][160];
 
+float result;
+
 int main() {
 
     printf("Hello world\n\r");
 
+    
+    int column_acc = 0;
+
     for (int j = 0; j < IMG_COLS; j++)
     {
-    	int column_acc = 0;
     	for (int i = 0; i < IMG_ROWS; i++)
     	{
     		column_acc += TestImg[i][j];
     	}
-    	printf("sum of column %3d is %d\n", j, column_acc);
+    	printf("column sum for %3d is %d\n", j, column_acc);
     }
 
+    result = 3.1415926535;
+
+    printf("result: %f", result);
+
+asm volatile ("end_of_main:");
     return 0;
 }
