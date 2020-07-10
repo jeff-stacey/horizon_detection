@@ -26,12 +26,27 @@ SOFTWARE.
 
 #define IMG_ROWS 120
 #define IMG_COLS 160
+#define HELP_TEST 1 //Testing Trigger for helper functions
 
-typedef uint16_t pixel;
+typedef int16_t pixel;
 
 pixel TestImg[120][160];
 
+int16_t kernel_x[3][3] = {
+		//Using SOBEL kernel
+            {-1, 0, 1},
+            {-2, 0, 2},
+            {-1, 0, 1}
+        };
+
+int16_t kernel_y[3][3] = {
+       //Using SOBEL kernel
+            {1, 2, 1},
+            {0, 0, 0},
+            {-1, -2, -1}
+        };
 float result;
+
 
 int main() {
 
@@ -51,7 +66,37 @@ int main() {
 
     result = 3.1415926535;
 
-    printf("result: %f", result);
+    printf("result: %f\n", result);
+
+
+    /* Helper Function Testing*/
+    if (HELP_TEST)
+    {
+    	printf("Helper Function Testing Start\n\r");
+
+    	/*Perform Helper Operations*/
+    	printf("Applying functions to image\n");
+
+    	pixel edge_x[120][160]; //Create x-direction gradient map output
+    	pixel edge_y[120][160]; //Create y-direction gradient map output
+
+    	conv2d(TestImg, edge_x, kernel_x); // Convolve
+    	printf("x-direction 2D-convolution complete\n");
+
+    	conv2d(TestImg, edge_y, kernel_y); // Convolve
+    	printf("y-direction 2D-convolution complete\n");
+
+    	pixel grad[120][160]; // Create Grad-Magnitude output
+    	pixel theta[120][160]; // Create Grad-Direction output
+
+    	img_hypot(edge_x, edge_y, grad);
+    	printf("Combined x and y edge maps using img_hypot\n\r");
+    	img_theta(edge_x, edge_y, theta);
+    	printf("Obtained direction map using img_theta\n\r");
+
+    }
+
+
 
 asm volatile ("end_of_main:");
     return 0;
