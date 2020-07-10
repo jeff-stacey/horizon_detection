@@ -70,6 +70,22 @@ CommandLineOptions parse_args(int argc, char** args)
     return options;
 }
 
+struct RenderMode
+{
+    const char* name = "";
+
+    enum
+    {
+        Default,
+        Debug,
+        Count
+    };
+
+} render_modes[] = {
+    {"Default"},
+    {"Debug"}
+};
+
 void start_gui(RenderState render_state, SimulationState state)
 {
     SDL_ShowWindow(render_state.window);
@@ -91,6 +107,8 @@ void start_gui(RenderState render_state, SimulationState state)
     Keyboard keys;
 
     char filename_buf[256] = {};
+
+    int render_mode = RenderMode::Default;
 
     bool running = true;
     while (running)
@@ -128,18 +146,19 @@ void start_gui(RenderState render_state, SimulationState state)
 
         if (!typing)
         {
+            const float rotation_increment = 0.01f;
             float roll = 0.0f;
             float pitch = 0.0f;
             float yaw = 0.0f;
 
-            if (keys.held.a) yaw += 0.1f;
-            if (keys.held.d) yaw -= 0.1f;
+            if (keys.held.a) yaw += rotation_increment;
+            if (keys.held.d) yaw -= rotation_increment;
 
-            if (keys.held.w) pitch += 0.1f;
-            if (keys.held.s) pitch -= 0.1f;
+            if (keys.held.w) pitch += rotation_increment;
+            if (keys.held.s) pitch -= rotation_increment;
 
-            if (keys.held.q) roll += 0.1f;
-            if (keys.held.e) roll -= 0.1f;
+            if (keys.held.q) roll += rotation_increment;
+            if (keys.held.e) roll -= rotation_increment;
 
             state.camera = state.camera * Quaternion::roll(roll) * Quaternion::pitch(pitch) * Quaternion::yaw(yaw);
 
@@ -148,6 +167,18 @@ void start_gui(RenderState render_state, SimulationState state)
             state.camera.inverse().to_matrix(camera_matrix);
             state.nadir = Vec3(-camera_matrix[2], -camera_matrix[5], -camera_matrix[8]);
             ImGui::InputFloat3("Nadir", (float*)&state.nadir);
+        }
+
+        if (ImGui::BeginCombo("Render Mode", render_modes[render_mode].name))
+        {
+            for (int i = 0; i < RenderMode::Count; ++i)
+            {
+                if (ImGui::Selectable(render_modes[i].name, i == render_mode))
+                {
+                    render_mode = i;
+                }
+            }
+            ImGui::EndCombo();
         }
 
         // ---------
@@ -159,8 +190,6 @@ void start_gui(RenderState render_state, SimulationState state)
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
 
         SDL_GL_SwapWindow(render_state.window);
-
-        SDL_Delay(100);
 
         // ------
         // Events

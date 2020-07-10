@@ -378,6 +378,12 @@ RenderState render_init(unsigned int screen_width, unsigned int screen_height)
     SDL_GL_SetAttribute(SDL_GL_CONTEXT_MINOR_VERSION, 2);
     render_state.gl_ctxt = SDL_GL_CreateContext(render_state.window);
 
+    // Enable VSync
+    if (SDL_GL_SetSwapInterval(1) < 0)
+    {
+        cerr << "Error enabling vsync" << endl;
+    }
+
     // load gl bindings
     GLenum err = glewInit();
     if (err != GLEW_OK)
