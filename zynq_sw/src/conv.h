@@ -44,7 +44,7 @@ SOFTWARE.
 ********************/
 
 /* Types */
-typedef uint16_t pixel;  //8-bit images, change if 14-bit
+typedef int16_t pixel;  //8-bit images, change if 14-bit
 
 /*Image Dimensions*/
 #define R_DIM 120
@@ -54,8 +54,6 @@ typedef uint16_t pixel;  //8-bit images, change if 14-bit
 /*Kernel Dimensions*/
 #define K_DIM 3 //Unless otherwise specified, kernel is 3x3
 
-/*Testing Trigger*/
-#define TEST 1
 
 /*******************
  *    FUNCTIONS    *
@@ -68,29 +66,28 @@ typedef uint16_t pixel;  //8-bit images, change if 14-bit
  *             K - 3x3 Convolution Kernel
  *
 *******************************************************/
-void conv2d(pixel A[R_DIM][C_DIM], pixel C[R_DIM][C_DIM], pixel K[K_DIM][K_DIM]) {
-    uint16_t rows = R_DIM;
-    uint16_t cols = C_DIM;
-    uint16_t a, b, i, j, sum;
-
-    uint16_t max = 255; //Maximum pixel value
+void conv2d(pixel A[R_DIM][C_DIM], pixel C[R_DIM][C_DIM], int16_t K[K_DIM][K_DIM]) {
+    int16_t rows = R_DIM;
+    int16_t cols = C_DIM;
+    int16_t a, b, i, j;
+    volatile int16_t sum = 0;
 
     /*Iterate through image*/
-    for (i=1 ; 1< rows-1 ; i++) {
+    for (i=1 ; i < rows-1 ; i++) {
         for (j=1 ; j < cols-1 ; j++){
             sum = 0;
             /* Iterate through kernel */
             for (a=-1; a < 2; a++) {
                 for (b=-1; b < 2; b++) {
                     /*Add to the sum*/
-                    sum = sum + A[i+a][j+b]*K[a+1][b+1];
+                    sum += A[i+a][j+b]*K[a+1][b+1];
                 }
             }
+            /*Sum Thresholding*/
+            if (sum < 0) sum = 0;
+            if (sum > 255) sum = 255;
+            C[i][j] = sum;
         }
-        /*Sum Thresholding*/
-        if (sum < 0) sum = 0;
-        if (sum > max) sum = max;
-        C[i][j] = sum;
     }
 };
 
