@@ -70,6 +70,7 @@ def main():
     test_results = []
 
     for im, da in zip(images, metadata):
+        print("processing file " + im)
         image = imageio.imread(image_folder + "/" + im)
 
         # Find the vertex with the bisection method.

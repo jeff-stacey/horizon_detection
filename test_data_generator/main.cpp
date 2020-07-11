@@ -70,27 +70,9 @@ CommandLineOptions parse_args(int argc, char** args)
     return options;
 }
 
-struct RenderMode
-{
-    const char* name = "";
-
-    enum
-    {
-        Default,
-        Debug,
-        Count
-    };
-
-} render_modes[] = {
-    {"Default"},
-    {"Debug"}
-};
-
 void start_gui(RenderState render_state, SimulationState state)
 {
     SDL_ShowWindow(render_state.window);
-
-    glViewport(0, 0, SCREEN_WIDTH_PIXELS, SCREEN_HEIGHT_PIXELS);
 
     // Initialize ImGui
     {
@@ -107,8 +89,6 @@ void start_gui(RenderState render_state, SimulationState state)
     Keyboard keys;
 
     char filename_buf[256] = {};
-
-    int render_mode = RenderMode::Default;
 
     bool running = true;
     while (running)
@@ -139,8 +119,6 @@ void start_gui(RenderState render_state, SimulationState state)
                 export_binary(filename_buf, render_state, state);
 
                 strncpy(file_extension, "    ", 4);
-
-                glViewport(0, 0, SCREEN_WIDTH_PIXELS, SCREEN_HEIGHT_PIXELS);
             }
         }
 
@@ -169,22 +147,10 @@ void start_gui(RenderState render_state, SimulationState state)
             ImGui::InputFloat3("Nadir", (float*)&state.nadir);
         }
 
-        if (ImGui::BeginCombo("Render Mode", render_modes[render_mode].name))
-        {
-            for (int i = 0; i < RenderMode::Count; ++i)
-            {
-                if (ImGui::Selectable(render_modes[i].name, i == render_mode))
-                {
-                    render_mode = i;
-                }
-            }
-            ImGui::EndCombo();
-        }
-
         // ---------
         // Rendering
         // ---------
-        render_frame(render_state, state);
+        render_frame(render_state, state, SCREEN_WIDTH_PIXELS, SCREEN_HEIGHT_PIXELS);
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());
