@@ -26,6 +26,10 @@ void main()
     {
         color = vec3(0.5f, 0.5f, 0.5f);
     }
+    else if (dot(nadir, normalize(dir)) > alpha - 0.05f)
+    {
+        color = ((dot(nadir, normalize(dir)) - (alpha - 0.05f)) / 0.05f) * vec3(0.5f, 0.5f, 0.5f);
+    }
 
     Color = vec4(color + texture(noise_texture, tex_coord).r * vec3(1.0f, 1.0f, 1.0f), 1.0f);
 }
