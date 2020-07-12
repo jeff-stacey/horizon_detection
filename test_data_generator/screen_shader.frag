@@ -6,6 +6,10 @@ uniform vec3 nadir;
 uniform uint screen_width;
 uniform uint screen_height;
 
+uniform sampler2D noise_texture;
+
+in vec2 tex_coord;
+
 void main()
 {
     // Width of the image plane, for z = -1
@@ -20,8 +24,8 @@ void main()
     vec3 color = vec3(0.0f, 0.0f, 0.0f);
     if (dot(nadir, normalize(dir)) > alpha)
     {
-        color = vec3(1.0f, 1.0f, 1.0f);
+        color = vec3(0.5f, 0.5f, 0.5f);
     }
 
-    Color = vec4(color, 1.0f);
+    Color = vec4(color + texture(noise_texture, tex_coord).r * vec3(1.0f, 1.0f, 1.0f), 1.0f);
 }

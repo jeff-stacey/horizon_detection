@@ -89,6 +89,7 @@ void start_gui(RenderState render_state, SimulationState state)
     Keyboard keys;
 
     char filename_buf[256] = {};
+    float noise_seed = 1.0f;
 
     bool running = true;
     while (running)
@@ -119,6 +120,14 @@ void start_gui(RenderState render_state, SimulationState state)
                 export_binary(filename_buf, render_state, state);
 
                 strncpy(file_extension, "    ", 4);
+            }
+
+            ImGui::InputFloat("Noise seed", &noise_seed);
+            if (ImGui::Button("Regenerate Noise"))
+            {
+                generate_noise(noise_seed, render_state.noise, CAMERA_H_RES * CAMERA_V_RES);
+                glTextureSubImage2D(render_state.noise_texture, 0, 0, 0, CAMERA_H_RES, CAMERA_V_RES, GL_RED, GL_FLOAT, render_state.noise);
+                noise_seed += 1.0f;
             }
         }
 
