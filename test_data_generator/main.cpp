@@ -90,6 +90,7 @@ void start_gui(RenderState render_state, SimulationState state)
 
     char filename_buf[256] = {};
     float noise_seed = 1.0f;
+    float noise_stdev = 0.01f;
 
     bool running = true;
     while (running)
@@ -123,9 +124,10 @@ void start_gui(RenderState render_state, SimulationState state)
             }
 
             ImGui::InputFloat("Noise seed", &noise_seed);
+            ImGui::InputFloat("Noise standard deviation", &noise_stdev);
             if (ImGui::Button("Regenerate Noise"))
             {
-                generate_noise(noise_seed, render_state.noise, CAMERA_H_RES * CAMERA_V_RES);
+                generate_noise(noise_seed, noise_stdev, render_state.noise, CAMERA_H_RES * CAMERA_V_RES);
                 glTextureSubImage2D(render_state.noise_texture, 0, 0, 0, CAMERA_H_RES, CAMERA_V_RES, GL_RED, GL_FLOAT, render_state.noise);
                 noise_seed += 1.0f;
             }

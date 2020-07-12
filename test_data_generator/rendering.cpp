@@ -376,10 +376,10 @@ void export_binary(const char* filename, RenderState render_state, SimulationSta
     fclose(fd);
 }
 
-void generate_noise(float seed, float* noise, size_t length)
+void generate_noise(float seed, float stdev, float* noise, size_t length)
 {
     std::default_random_engine random_engine(seed);
-    std::normal_distribution<float> normal_dist(0.0f, 0.1f);
+    std::normal_distribution<float> normal_dist(0.0f, stdev);
     for (size_t i = 0; i < length; ++i)
     {
         noise[i] = normal_dist(random_engine);
@@ -478,7 +478,7 @@ RenderState render_init(unsigned int screen_width, unsigned int screen_height)
     }
 
     render_state.noise = new float[CAMERA_H_RES * CAMERA_V_RES];
-    generate_noise(1, render_state.noise, CAMERA_H_RES * CAMERA_V_RES);
+    generate_noise(1, 0.05, render_state.noise, CAMERA_H_RES * CAMERA_V_RES);
 
     // noise texture
     {
