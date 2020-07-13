@@ -23,6 +23,10 @@ SOFTWARE.
 #include <stdio.h>
 #include <stdint.h>
 
+#include "linalg.h"
+#include "circle_fit.h"
+#include "attitude.h"
+
 #define IMG_ROWS 120
 #define IMG_COLS 160
 
@@ -41,8 +45,9 @@ int main() {
     	{
     		column_acc += TestImg[i][j];
     	}
-    	printf("sum of column %3d is %d\n", j, column_acc);
+    	//printf("sum of column %3d is %d\n", j, column_acc);
     }
+
 
     return 0;
 }
