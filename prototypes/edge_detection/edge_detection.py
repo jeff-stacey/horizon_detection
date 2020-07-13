@@ -104,7 +104,7 @@ arr2png(D_bin, 'prewitt_BEM.png')
 #       Canny edge detection       #
 ####################################
 
-# Step 1: Apply Gaussian blur (use Gaussian 5x5 kernel)
+# Step 1: Apply Gaussian blur (use Gaussian 3x3 kernel)
 B_gauss = (1/16) * np.array([[ 1, 2, 1], [ 2,  4,  2], [1, 2, 1]])
 B_blur = sig.convolve2d(image, B_gauss, mode='same', boundary='fill', fillvalue=0)
 # 3x3 blur kernel source: https://en.wikipedia.org/wiki/Kernel_(image_processing)

@@ -4,6 +4,7 @@ set app_name "horizon_detection"
 
 # Change this to use non-debug build - not tested
 set build_dir "../workspace/$app_name/Debug"
+set hw_dir "../workspace/zcu104/hw"
 
 set testing_dir [pwd]
 
@@ -32,12 +33,49 @@ if {$skip_build_idx >= 0} {
     app build -name $app_name
 }
 
-puts "Connecting to emulator"
-# annoyingly this doesn't have a return status so I can't check if it failed
-gdbremote connect localhost:1137
+set using_hw [lsearch -exact $argv "-b"]
 
-puts "Selecting Cortex-R5 #0"
-targets 8
+if {$using_hw >= 0} {
+    puts "Connecting to hardware"
+    # remove this argument from argv
+    set argv_new {}
+    foreach item $argv {
+        if {$item ni "-b"} {
+            lappend argv_new $item
+        }
+        set argv $argv_new
+    }
+
+    # get vitis install directory
+    set vitis_path [join [lrange [split [exec which xsct] /] 0 end-2] /]
+
+    #load the Zynq tools
+    source $vitis_path/scripts/vitis/util/zynqmp_utils.tcl
+
+    #load the script for dealing with the zynq PSU
+    source $hw_dir/psu_init.tcl
+
+    connect
+
+    targets -set -filter {name =~"PSU"}
+
+    psu_init
+    
+    puts "Selecting Cortex-R5 #0"
+    targets -set -filter {name =~"*R5*0"}
+
+    rst -processor
+
+} else {
+    puts "Connecting to emulator"
+    # annoyingly this doesn't have a return status so I can't check if it failed
+    gdbremote connect localhost:1137
+
+    puts "Selecting Cortex-R5 #0"
+    targets -set -filter {name =~"*R5*0"}
+
+}
+
 
 puts "Copying executable into memory"
 dow $build_dir/$app_name.elf
@@ -47,6 +85,8 @@ mask_write 0xff5e023c [expr (1 << 0) | 0x14] 0
 mwr 0xff9a0000 0x80000218
 
 bpadd -addr &main
+
+bpadd -addr &end_of_main
 
 puts "Running until start of main"
 con -block -timeout 5
@@ -59,6 +99,16 @@ puts "Copying image data from $testfile into memory"
 mwr -bin -file $testing_dir/$testfile $image_base_addr [expr 160*120]
 
 puts "Running program"
+con -block
+
+# should stop at end_of_main label
+set result_addr [lindex [print &result] 2]
+set result_value [lindex [mrd $result_addr] 1]
+
+# parse result as float
+binary scan [binary format i 0x$result_value] f y
+puts $y
+
 con
 
 # TODO: find a way for the program to indicate it's done so we can run multiple

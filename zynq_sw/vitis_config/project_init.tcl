@@ -17,7 +17,7 @@ if [file exist workspace] {
         exec mkdir -p workspace
     } else {
         puts "Creating workspace directory"
-        exec if not exist \"workspace\" mkdir \"workspace\"
+        exec mkdir -p workspace
     }
 
     setws workspace
@@ -46,7 +46,7 @@ foreach source_file [glob -tails -directory ../src *] {
     if {$tcl_platform(platform) == "unix"} { 
         exec ln -f ../src/$source_file $app_name/src/$source_file
     } else {
-        exec mklink /H $app_name\src\$source_file ..\src\$source_file
+        exec ln -f ../src/$source_file $app_name/src/$source_file
     }
 }
     
