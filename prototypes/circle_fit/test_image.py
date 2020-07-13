@@ -34,7 +34,7 @@ metadata = np.sort(os.listdir(data_folder))
 test_results = []
 
 for im, da in zip(images, metadata):
-    
+    print(im)
     with open(data_folder+'/'+da,'rb') as f:
         chunk = f.read(44)
     
@@ -69,17 +69,14 @@ for im, da in zip(images, metadata):
     data[:,1] = data[:,1] - 80
     data = np.flip(data,1)
         
-    centre, r = circle_fit.circle_find(data)
-    nadir = attitude.find_nadir(r, centre)
-    nadir = np.squeeze(np.asarray(nadir))
+    #centre, r = circle_fit.circle_find(data)
+    centre, r = circle_fit.LSfit(data)
     
     vert = ((np.zeros(2) - centre)/np.linalg.norm(np.zeros(2) - centre))*r + centre
+
+    nadir = attitude.find_nadir(r, centre,vert)
+    nadir = np.squeeze(np.asarray(nadir))
     
-    theta_x = math.acos(-nad[2])
-    beta = theta_x - math.asin(E_RADIUS/(E_RADIUS+ALTITUDE))
-    k = 80*math.tan(beta)/math.tan(FOV)
-    vert_true = np.array([0,-k])
-        
     fig, ax = plt.subplots()
     plt.grid()
     plt.gca().set_aspect("equal")
@@ -88,14 +85,12 @@ for im, da in zip(images, metadata):
     plt.scatter(data[:,0],data[:,1])
     plt.scatter(centre[0],centre[1],s=10)
     plt.scatter(vert[0],vert[1],s=100)
-    plt.scatter(vert_true[0],vert_true[1],s=100,c='r')
     circ = plt.Circle(centre,radius=r, fill=False)
-    ax.add_artist(circ)
+    ax.add_artist(circ)    
     plt.show()
     
     test_results.append({'image':im, 'nadir_actual_x':nad[0], 'nadir_actual_y':nad[1], 'nadir_actual_z':nad[2], 'nadir_predicted_x':nadir[0], 'nadir_predicted_y':nadir[1], 'nadir_predicted_z':nadir[2], 'error':np.linalg.norm(nadir-nad)/np.linalg.norm(nad), 'vert_x': vert[0], 'vert_y': vert[1], 'above_horizon': not (r > np.linalg.norm(np.zeros(2) - centre))})
     
-    #test_results.append({'image':im,'nadir_actual_x':m[8],'nadir_actual_y':m[9],'nadir_actual_z':m[10], 'nadir_predicted_x':nadir[0], 'nadir_predicted_y':nadir[1], 'nadir_predicted_z':nadir[2]})
     
 test_results = pd.DataFrame(test_results)
 
