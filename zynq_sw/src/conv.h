@@ -28,15 +28,12 @@ SOFTWARE.
 #include "math.h"
 
 /*TODO: HELPER FUNCTIONS FOR EDGE DETECTION
-    - DONE 2d convolve (may have scaling issues in output around edges)
-    - 1d convolve with image
-    - read image into array?
-    - grey edge map to binary edge map conversion
+    - DONE 2d convolve
     - DONE element-wise array "hypotenuse" operation
     - DONE element-wise array "theta" operation
-    - Non-Max suppression (rquires edge map and theta matrix)
-    - Double Thresholding
-    - Edge Tracking by Hysterysis
+    - DONE Non-Max suppression
+    - DONE Double Thresholding
+    - DONE Edge Tracking by Hysteresis
 */
 
 /*******************
@@ -44,7 +41,7 @@ SOFTWARE.
 ********************/
 
 /* Types */
-typedef int16_t pixel;  //8-bit images, change if 14-bit
+typedef int16_t pixel;  //16-bit images
 
 /*Image Dimensions*/
 #define R_DIM 120
@@ -60,7 +57,7 @@ typedef int16_t pixel;  //8-bit images, change if 14-bit
 ********************/
 
 /*******************************************************
- *    2D Convolution
+ *    2D Convolution (kernel is type: int16_t)
  *    Inputs:  A - 120x160 Image Matrix
  *             C - 120x160 Result Matrix
  *             K - 3x3 Convolution Kernel
@@ -91,28 +88,175 @@ void conv2d(pixel A[R_DIM][C_DIM], pixel C[R_DIM][C_DIM], int16_t K[K_DIM][K_DIM
     }
 };
 
-/********************************************************************
- *    1D Convolution
+/*******************************************************
+ *    2D Convolution (kernel is type: double)
  *    Inputs:  A - 120x160 Image Matrix
  *             C - 120x160 Result Matrix
- *             K_c - 3x1 Seperated Section of Kernel (column vector)
- *             K_r - 1x3 Seperated Section of Kernel (row vector)
+ *             K - 3x3 Convolution Kernel
  *
-**********************************************************************/
-void conv1d(pixel A[R_DIM][C_DIM], pixel K_r[K_DIM], pixel K_c[K_DIM], pixel C[R_DIM][C_DIM]) {
-    //TODO
+*******************************************************/
+void conv2dGauss(pixel A[R_DIM][C_DIM], pixel C[R_DIM][C_DIM], double K[K_DIM][K_DIM]) {
+    int16_t rows = R_DIM;
+    int16_t cols = C_DIM;
+    int16_t a, b, i, j;
+    volatile double sum = 0;
+
+    /* Iterate through image */
+    for (i=1 ; i < rows-1 ; i++) {
+        for (j=1 ; j < cols-1 ; j++){
+            sum = 0;
+            /* Iterate through kernel */
+            for (a=-1; a < 2; a++) {
+                for (b=-1; b < 2; b++) {
+                    /*Add to the sum*/
+                    sum += A[i+a][j+b]*K[a+1][b+1];
+                }
+            }
+            /* Sum Thresholding */
+            if (sum < 0) sum = 0;
+            if (sum > 255) sum = 255;
+            C[i][j] = (pixel)sum;
+        }
+    }
 };
 
 /********************************************************************
- *    Hyptotenuse Calculation (element-wise)
+ *    Non-Maximum Suppression
+ *    Inputs:  A - 120x160 Image Result Matrix
+ *             G - 120x160 Gradient Magnitude Matrix
+ *             T - 120x160 Gradient Phase Matrix
+ *
+**********************************************************************/
+void nonMaxSuppression(pixel A[R_DIM][C_DIM], pixel G[R_DIM][C_DIM], double T[R_DIM][C_DIM]) {
+
+	uint16_t i, j, q, r;
+	double angle = 0;
+	pixel current;
+
+	// Iterate through matrix
+	for(i = 1; i < R_DIM-1 ; i++) {
+		for(j = 1; j < C_DIM-1 ; j++) {
+			q = 255;
+			r = 255;
+
+			// Convert angle to degrees and scale so non-negative
+			angle = T[i][j]*180/M_PI;
+			if (angle < 0) angle += 180;
+
+			// Obtain neighbor pixels in gradient direction
+			if ((0 <= angle && angle < 22.5) || (157.5 <= angle && angle <= 180)) {
+				// Angle 0
+				q = G[i][j+1];
+				r = G[i][j-1];
+			} else if (22.5 <= angle && angle < 67.5) {
+				// Angle 45
+				q = G[i+1][j-1];
+				r = G[i-1][j+1];
+			} else if (67.5 <= angle && angle < 112.5) {
+				// Angle 90
+				q = G[i+1][j];
+				r = G[i-1][j];
+			} else if (112.5 <= angle && angle < 157.5) {
+				// Angle 135
+				q = G[i-1][j-1];
+				r = G[i+1][j+1];
+			}
+
+			// Check if current pixel is a maximum in this direction
+			current = G[i][j];
+			if ((current >= q) && (current >= r)) {
+				A[i][j] = current;
+			} else {
+				A[i][j] = 0;
+			}
+
+		}
+	}
+};
+
+/********************************************************************
+ *    Double Thresholding
+ *    Inputs:  	  A 	 - 120X160 Image Matrix
+ *             lowRatio  - low_thresh/high_thresh
+ *             highRatio - high_thresh/maximum_value
+ *
+**********************************************************************/
+void doubleThreshold (pixel A[R_DIM][C_DIM], float lowRatio, float highRatio) {
+
+	// Obtain max image value to determine thresholds
+	uint16_t i, j;
+	pixel max = 0;
+	pixel a_pix;
+    for (i = 1; i < R_DIM-1 ; i++) {
+        for (j = 1; j < C_DIM-1 ; j++) {
+        	a_pix = A[i][j];
+        	if (a_pix > max) max = a_pix;
+        };
+    };
+
+    // Calculate Thresholds
+    pixel highThresh = (pixel)max*highRatio;
+	pixel lowThresh  = (pixel)highThresh*lowRatio;
+
+	// Define values of weak and strong edges
+	pixel weak = 25;
+	pixel strong = 225;
+
+	// Filter the matrix to contain only 3 possible values (strong, weak, 0)
+    for (i=1; i < R_DIM-1 ; i++) {
+        for (j=1; j < C_DIM-1 ; j++) {
+        	a_pix = A[i][j];
+        	if (a_pix >= highThresh) {
+        		A[i][j] = strong;
+        	} else if ((a_pix <= highThresh) && (a_pix >= lowThresh)) {
+        		A[i][j] = weak;
+        	} else {
+        		A[i][j] = 0;
+        	}
+        };
+    };
+
+
+};
+
+/********************************************************************
+ *    Edge Tracking by Hysteresis
+ *    Inputs:  	 A 	  - 120x160 Image Array
+ *             strong - Value of "strong" edge pixel = 255
+ *              weak  - Value of "weak" edge pixel = 25
+ *
+**********************************************************************/
+void edgeTracking(pixel A[R_DIM][C_DIM], pixel strong, pixel weak) {
+
+    uint16_t i, j;
+
+    // Check around weak edges to see if they're part of a strong edge
+    for (i=1; i < R_DIM-1 ; i++) {
+        for (j=1; j < C_DIM-1 ; j++) {
+        	if (A[i][j] == weak) {
+        		// If any strong pixels around it, assign strong, else assign 0
+        		if (A[i-1][j-1] == strong || A[i-1][j] == strong || A[i-1][j+1] == strong ||
+        			 A[i][j-1]  == strong || A[i][j+1] == strong ||
+					A[i+1][j-1] == strong || A[i+1][j] == strong || A[i+1][j+1] == strong)
+        		{
+        			A[i][j] = strong;
+        		} else {
+        			A[i][j] = 0;
+        		}
+        	}
+
+        };
+    };
+};
+
+/********************************************************************
+ *    Hypotenuse Calculation (element-wise)
  *    Inputs:  X - First array operand
  *             Y - Second array operand
  *             C - Result Matrix
- *             r - # of rows in matricies
- *             c - # of columns in matricies
  *
 **********************************************************************/
-void img_hypot (pixel X[R_DIM][C_DIM], pixel Y[R_DIM][C_DIM], pixel C[R_DIM][C_DIM]) {
+void imgHypot (pixel X[R_DIM][C_DIM], pixel Y[R_DIM][C_DIM], pixel C[R_DIM][C_DIM]) {
 
     uint16_t i, j;
     double result;
@@ -130,19 +274,17 @@ void img_hypot (pixel X[R_DIM][C_DIM], pixel Y[R_DIM][C_DIM], pixel C[R_DIM][C_D
  *    Inputs:  X - First array operand
  *             Y - Second array operand
  *             C - Result Matrix
- *             r - # of rows in matricies
- *             c - # of columns in matricies
  *
 **********************************************************************/
-void img_theta (pixel X[R_DIM][C_DIM], pixel Y[R_DIM][C_DIM], pixel C[R_DIM][C_DIM]) {
+void imgTheta (pixel X[R_DIM][C_DIM], pixel Y[R_DIM][C_DIM], double C[R_DIM][C_DIM]) {
 
-    short i, j;
+    uint16_t i, j;
     double result;
 
     for (i=0; i < R_DIM-1 ; i++) {
         for (j=0; j < C_DIM-1 ; j++) {
             result =  atan((double)Y[i][j]/(double)X[i][j]);
-            C[i][j] = (pixel)result;
+            C[i][j] = result;
         };
     };
 };
@@ -151,8 +293,6 @@ void img_theta (pixel X[R_DIM][C_DIM], pixel Y[R_DIM][C_DIM], pixel C[R_DIM][C_D
  *    Edge Map to Binary Edge Map Conversion (element-wise)
  *    Inputs:  E   - Edge map image
  *             B   - Result Matrix
- *             r   - # of rows in matricies
- *             c   - # of columns in matricies
  *             u_t - Upper threshold value
  *
 **********************************************************************/

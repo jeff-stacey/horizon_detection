@@ -26,25 +26,48 @@ SOFTWARE.
 
 #define IMG_ROWS 120
 #define IMG_COLS 160
-#define HELP_TEST 1 //Testing Trigger for helper functions
+#define EDGE_TEST 1 //Testing Trigger for edge_detection
 
 typedef int16_t pixel;
 
+/********************************
+ *			Global Vars			*
+ ********************************/
 pixel TestImg[120][160];
 
+double kernel_gauss[3][3] = {
+		// Gaussian Blur kernel
+			{1/16, 2/16, 1/16},
+			{2/16, 4/16, 2/16},
+			{1/16, 2/16, 1/16}
+		};
+
 int16_t kernel_x[3][3] = {
-		//Using SOBEL kernel
+		// SOBEL kernel
             {-1, 0, 1},
             {-2, 0, 2},
             {-1, 0, 1}
         };
 
 int16_t kernel_y[3][3] = {
-       //Using SOBEL kernel
+        // SOBEL kernel
             {1, 2, 1},
             {0, 0, 0},
             {-1, -2, -1}
         };
+
+pixel blurred[120][160];	// Create gaussian blurring step output
+pixel edge_x[120][160]; 	// Create x-direction gradient map output
+pixel edge_y[120][160]; 	// Create y-direction gradient map output
+pixel grad[120][160]; 		// Create Grad-Magnitude output
+double theta[120][160]; 	// Create Grad-Direction output
+pixel suppressed[120][160]; // Create Output for non-max suppression step
+
+float lowRatio = 0.05;
+float highRatio = 0.09;
+pixel strong = 255;
+pixel weak = 25;
+
 float result;
 
 
@@ -69,31 +92,42 @@ int main() {
     printf("result: %f\n", result);
 
 
-    /* Helper Function Testing*/
-    if (HELP_TEST)
+    /* Edge Detection Testing*/
+    if (EDGE_TEST)
     {
-    	printf("Helper Function Testing Start\n\r");
+    	printf("\nEdge Detection Testing Start\n");
 
-    	/*Perform Helper Operations*/
-    	printf("Applying functions to image\n");
+    	printf("\nStep 1: Obtain gradient magnitude and phase maps\n");
 
-    	pixel edge_x[120][160]; //Create x-direction gradient map output
-    	pixel edge_y[120][160]; //Create y-direction gradient map output
+    	conv2dGauss(TestImg, blurred, kernel_gauss);
+    	printf("\tGaussian blurring of test image complete\n");
 
-    	conv2d(TestImg, edge_x, kernel_x); // Convolve
-    	printf("x-direction 2D-convolution complete\n");
+    	conv2d(blurred, edge_x, kernel_x);
+    	printf("\tx-direction 2D-convolution complete\n");
 
-    	conv2d(TestImg, edge_y, kernel_y); // Convolve
-    	printf("y-direction 2D-convolution complete\n");
+    	conv2d(blurred, edge_y, kernel_y);
+    	printf("\ty-direction 2D-convolution complete\n");
 
-    	pixel grad[120][160]; // Create Grad-Magnitude output
-    	pixel theta[120][160]; // Create Grad-Direction output
+    	imgHypot(edge_x, edge_y, grad);
+    	printf("\tObtained gradient magnitude map\n");
 
-    	img_hypot(edge_x, edge_y, grad);
-    	printf("Combined x and y edge maps using img_hypot\n\r");
-    	img_theta(edge_x, edge_y, theta);
-    	printf("Obtained direction map using img_theta\n\r");
+    	imgTheta(edge_x, edge_y, theta);
+    	printf("\tObtained gradient phase map\n\r");
 
+    	printf("Step 2: Perform non-maximum suppression\n");
+
+    	nonMaxSuppression(suppressed, grad, theta);
+    	printf("\tNon-Max suppression complete\n\r");
+
+    	printf("Step 3: Perform Thresholding and Edge Tracking\n");
+
+    	doubleThreshold(suppressed, lowRatio, highRatio);
+    	printf("\tDouble Thresholding complete\n");
+
+    	edgeTracking(suppressed, strong, weak);
+    	printf("\tEdge Tracking complete\n\r");
+
+    	printf("Edge Detection Test Complete\n");
     }
 
 
