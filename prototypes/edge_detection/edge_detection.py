@@ -26,7 +26,7 @@ import numpy as np
 #       Important Variables        #
 ####################################
 
-currentImage = 'test_image_1.png' #Current image to perform edge detection on
+currentImage = 'test1.png' #Current image to perform edge detection on
 plotShow = True #Toggle comparison plot output
 
 ####################################
@@ -109,6 +109,13 @@ B_gauss = (1/16) * np.array([[ 1, 2, 1], [ 2,  4,  2], [1, 2, 1]])
 B_blur = sig.convolve2d(image, B_gauss, mode='same', boundary='fill', fillvalue=0)
 # 3x3 blur kernel source: https://en.wikipedia.org/wiki/Kernel_(image_processing)
 
+
+kern1 = np.sqrt(2)/4
+
+# Testing kernels
+#Cx = np.array([[ -kern1, 0, kern1], [ -1,  0,  1], [ -kern1, 0, kern1]])
+#Cy = np.array([[ kern1, 1, kern1], [0, 0, 0], [-kern1, -1, -kern1]])
+
 #Step 2: Obtain the Sobel edge intensity and direction matricies
 Bx = sig.convolve2d(B_blur, Gx, mode='same', boundary='fill', fillvalue=0)
 By = sig.convolve2d(B_blur, Gy, mode='same', boundary='fill', fillvalue=0)
@@ -154,8 +161,8 @@ for i in range(1, M-1):
       pass
 
 #Step 4: Double Thresholding
-lowRatio = 0.05
-highRatio = 0.09
+lowRatio = 0.3
+highRatio = 0.67
 
 highThresh = Z.max() * highRatio
 lowThresh = highThresh * lowRatio
@@ -187,28 +194,28 @@ for i in range(1, M-1):
 
 #Output Edge Map
 Z_bin = edge2bin(Z_thresh, 2)
-arr2png(Z_bin, 'canny_BEM.png')
+arr2png(Z_thresh, 'canny_BEM.png')
 
 ########################
 #     Plot Settings    #
 ########################
 
 #Setup plot
-f, axarr = plt.subplots(1,4)
+f, axarr = plt.subplots(1,2)
 axarr[0].set_title("Original Image")
 axarr[0].imshow(image)
 
 #Sobel
-axarr[1].set_title("Sobel Edge Map")
-axarr[1].imshow(edge2bin(C, 2))
+#axarr[1].set_title("Sobel Edge Map")
+#axarr[1].imshow(edge2bin(C, 2))
 
 #Prewitt
-axarr[2].set_title("Prewitt Edge Map")
-axarr[2].imshow(edge2bin(D, 2))
+#axarr[2].set_title("Prewitt Edge Map")
+#axarr[2].imshow(edge2bin(D, 2))
 
 #Halfway Canny
-axarr[3].set_title("Canny Edge Map")
-axarr[3].imshow(edge2bin(Z_thresh, 2))
+axarr[1].set_title("Canny Edge Map")
+axarr[1].imshow(edge2bin(Z_thresh, 2))
 
 # Show plot if desired
 if plotShow:
