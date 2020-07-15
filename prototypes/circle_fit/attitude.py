@@ -24,7 +24,7 @@ def find_vert_closest(data):
     
     return p
 
-def find_attitude(r, c):
+def find_attitude(r, c, vert):
     #theta_z = roll
     #theta_x = pitch
     
@@ -41,7 +41,7 @@ def find_attitude(r, c):
     if det < 0:
         theta_z = -1*theta_z
     
-    vert = ((np.zeros(2) - c)/np.linalg.norm(np.zeros(2) - c))*r + c
+    #vert = ((np.zeros(2) - c)/np.linalg.norm(np.zeros(2) - c))*r + c
     
     #check if centre is inside circle:
     if r > np.linalg.norm(np.zeros(2) - c):
@@ -59,21 +59,19 @@ def find_attitude(r, c):
     return theta_x, theta_z
 
 
-def find_nadir(r, c):
-    th_x, th_z = find_attitude(r,c)
-    th_x = -1*th_x
-    th_z = -1*th_z
+def find_nadir(r, c, vert):
+    th_x, th_z = find_attitude(r,c,vert)
+    th_x = -th_x
+    th_z = -th_z
         
     nadir = np.matrix([0,0,-1])
-        
     #rotate about x by th_x
     nadir = np.matrix([[1,              0, 0],
                [0, math.cos(th_x), -1*math.sin(th_x)],
                [0, math.sin(th_x), math.cos(th_x)]])*nadir.T
-    
     #rotate about z by th_z
     nadir = np.matrix([[math.cos(th_z), -1*math.sin(th_z), 0],
                        [math.sin(th_z), math.cos(th_z), 0],
                        [0, 0, 1]])*nadir
-    
+                       
     return nadir

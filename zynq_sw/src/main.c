@@ -24,6 +24,10 @@ SOFTWARE.
 #include <stdint.h>
 #include "conv.h"
 
+#include "linalg.h"
+#include "circle_fit.h"
+#include "attitude.h"
+
 #define IMG_ROWS 120
 #define IMG_COLS 160
 #define EDGE_TEST 1 //Testing Trigger for edge_detection
