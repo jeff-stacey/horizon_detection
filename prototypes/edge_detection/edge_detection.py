@@ -26,11 +26,7 @@ import numpy as np
 #       Important Variables        #
 ####################################
 
-<<<<<<< HEAD
-currentImage = 'test1.png' #Current image to perform edge detection on
-=======
-currentImage = '/home/byron/Documents/horizon_detection/test_data_generator/test.png' #Current image to perform edge detection on
->>>>>>> a76aa548eb3e6482d753f84c84d0779823e20149
+currentImage = "C:\\Users\\ryanr\\Desktop\\ECE499\\ws\\horizon_detection\\zynq_sw\\testing\\test_images\\test1.png" #Current image to perform edge detection on
 plotShow = True #Toggle comparison plot output
 
 ####################################
@@ -199,6 +195,17 @@ for i in range(1, M-1):
 #Output Edge Map
 Z_bin = edge2bin(Z_thresh, 2)
 arr2png(Z_thresh, 'canny_BEM.png')
+
+
+# Row Sum Creation for Comparison to C Output
+for i in range(0, M):
+  column_acc = 0
+  for j in range(0, N):
+    column_acc += Z_thresh[i, j];
+
+  print("\trow sum for ", i, " is ", column_acc);
+
+
 
 ########################
 #     Plot Settings    #

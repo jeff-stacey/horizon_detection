@@ -48,8 +48,9 @@ pixel suppressed[120][160]; // Create Output for non-max suppression step
 // Edge detection parameters
 float lowRatio = 0.3;
 float highRatio = 0.67;
-pixel strong = 255;
-pixel weak = 25;
+pixel strong = 0x3fff;  // Totally black pixel == 16383
+                        // Totally white pixel == 0
+pixel weak = 0x666;     // set weak to ~10% of total magnitude
 
 float result;
 
@@ -58,45 +59,43 @@ int main() {
     dprintf("Starting horizon detection.\n\r");
 
     dprintf("\nEdge Detection Testing Start\n");
+    printRowSum(TestImg);
+
+    dprintf("\tInitialized all output arrays\n");
 
     conv2dGauss(TestImg, blurred, kernel_gauss);
-    printf("\tGaussian blurring of test image complete\n");
+    dprintf("\tGaussian blurring of test image complete\n");
     printRowSum(blurred);
 
     conv2d(blurred, edge_x, kernel_x);
-    printf("\tx-direction 2D-convolution complete\n");
-    printRowSum(edge_x);
+    dprintf("\tx-direction 2D-convolution complete\n");
+    //printRowSum(edge_x);
 
     conv2d(blurred, edge_y, kernel_y);
-    printf("\ty-direction 2D-convolution complete\n");
-    printRowSum(edge_y);
-
+    dprintf("\ty-direction 2D-convolution complete\n");
+    //printRowSum(edge_y);
 
     imgHypot(edge_x, edge_y, grad);
-    printf("\tObtained gradient magnitude map\n");
-    printRowSum(grad);
-
-    imgTheta(edge_x, edge_y, theta);
-    printf("\tObtained gradient phase map\n\r");
-    printRowSumTheta(theta);
+    dprintf("\tObtained gradient magnitude map\n");
+    //printRowSum(grad);
 
     imgTheta(edge_x, edge_y, theta);
     dprintf("\tObtained gradient phase map\n\r");
 
     nonMaxSuppression(suppressed, grad, theta);
-    printf("\tNon-Max suppression complete\n\r");
-    //printRowSum(suppressed);
+    dprintf("\tNon-Max suppression complete\n\r");
+    printRowSum(suppressed);
 
     doubleThreshold(suppressed, lowRatio, highRatio);
-    printf("\tDouble Thresholding complete\n");
-    //printRowSum(suppressed);
+    dprintf("\tDouble Thresholding complete\n");
+    printRowSum(suppressed);
 
     edgeTracking(suppressed, strong, weak);
-    printf("\tEdge Tracking complete\n\r");
-    //printRowSum(suppressed);
+    dprintf("\tEdge Tracking complete\n\r");
+    printRowSum(suppressed);
 
-    printf("Edge Detection Test Complete\n");
-    //printRowSum(suppressed);
+    dprintf("Edge Detection Test Complete\n");
+    printRowSum(suppressed);
 
     asm volatile ("end_of_main:");
     return 0;

@@ -81,7 +81,7 @@ void conv2d(pixel A[R_DIM][C_DIM], pixel C[R_DIM][C_DIM], int16_t K[K_DIM][K_DIM
             }
             /*Sum Thresholding*/
             if (sum < 0) sum = 0;
-            if (sum > 255) sum = 255;
+            if (sum > 0x3fff) sum = 0x3fff;
             C[i][j] = sum;
         }
     }
@@ -113,7 +113,7 @@ void conv2dGauss(pixel A[R_DIM][C_DIM], pixel C[R_DIM][C_DIM], float K[K_DIM][K_
             }
             /* Sum Thresholding */
             if (sum < 0) sum = 0;
-            if (sum > 255) sum = 255;
+            if (sum > 0x3fff) sum = 0x3fff;
             C[i][j] = (pixel)sum;
         }
     }
@@ -135,8 +135,8 @@ void nonMaxSuppression(pixel A[R_DIM][C_DIM], pixel G[R_DIM][C_DIM], double T[R_
 	// Iterate through matrix
 	for(i = 1; i < R_DIM-1 ; i++) {
 		for(j = 1; j < C_DIM-1 ; j++) {
-			q = 255;
-			r = 255;
+			q = 0x3fff;
+			r = 0x3fff;
 
 			// Convert angle to degrees and scale so non-negative
 			angle = T[i][j]*180/M_PI;
