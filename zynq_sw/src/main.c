@@ -69,33 +69,38 @@ int main() {
 
     conv2d(blurred, edge_x, kernel_x);
     dprintf("\tx-direction 2D-convolution complete\n");
-    //printRowSum(edge_x);
+    printRowSum(edge_x);
 
     conv2d(blurred, edge_y, kernel_y);
     dprintf("\ty-direction 2D-convolution complete\n");
-    //printRowSum(edge_y);
+    printRowSum(edge_y);
+
 
     imgHypot(edge_x, edge_y, grad);
     dprintf("\tObtained gradient magnitude map\n");
-    //printRowSum(grad);
+    printRowSum(grad);
+
+    imgTheta(edge_x, edge_y, theta);
+    dprintf("\tObtained gradient phase map\n\r");
+    printRowSumTheta(theta);
 
     imgTheta(edge_x, edge_y, theta);
     dprintf("\tObtained gradient phase map\n\r");
 
     nonMaxSuppression(suppressed, grad, theta);
     dprintf("\tNon-Max suppression complete\n\r");
-    printRowSum(suppressed);
+    //printRowSum(suppressed);
 
     doubleThreshold(suppressed, lowRatio, highRatio);
     dprintf("\tDouble Thresholding complete\n");
-    printRowSum(suppressed);
+    //printRowSum(suppressed);
 
     edgeTracking(suppressed, strong, weak);
     dprintf("\tEdge Tracking complete\n\r");
-    printRowSum(suppressed);
+    //printRowSum(suppressed);
 
     dprintf("Edge Detection Test Complete\n");
-    printRowSum(suppressed);
+    //printRowSum(suppressed);
 
     asm volatile ("end_of_main:");
     return 0;

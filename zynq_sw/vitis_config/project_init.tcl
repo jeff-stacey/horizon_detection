@@ -50,6 +50,8 @@ foreach source_file [glob -tails -directory ../src *] {
     }
 }
     
+# Turn on debug prints
+app config -name $app_name define-compiler-symbols HD_DEBUG
 
 # Build the app
 app build -name $app_name
