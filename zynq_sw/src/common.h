@@ -20,13 +20,14 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef ATTITUDE_HEADER
-#define ATTITUDE_HEADER
+#ifndef COMMON_HEADER
+#define COMMON_HEADER
 
-float find_roll(const float result[3]);
+#include <stdio.h>
 
-float find_pitch(const float results[3]);
+#define DEBUG 1
 
-void find_nadir(const float results[3], float nadir[3]);
+#define dprintf(...) \
+    do { if (DEBUG) printf(__VA_ARGS__); } while (0);
 
 #endif

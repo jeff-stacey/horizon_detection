@@ -20,37 +20,36 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef CONV_HEADER
-#define CONV_HEADER
+#include "edge.h"
 
-#include <stdio.h>
+#include "common.h"
 #include <stdint.h>
 #include "math.h"
 
-/*TODO: HELPER FUNCTIONS FOR EDGE DETECTION
-    - DONE 2d convolve
-    - DONE element-wise array "hypotenuse" operation
-    - DONE element-wise array "theta" operation
-    - DONE Non-Max suppression
-    - DONE Double Thresholding
-    - DONE Edge Tracking by Hysteresis
-*/
-
 /*******************
- *    DEFINES      *
+ *    KERNELS      *
 ********************/
 
-/* Types */
-typedef int16_t pixel;  //16-bit images
+float kernel_gauss[K_DIM][K_DIM] = {
+		// Gaussian Blur kernel
+			{1.0/16, 2.0/16, 1.0/16},
+			{2.0/16, 4.0/16, 2.0/16},
+			{1.0/16, 2.0/16, 1.0/16}
+		};
 
-/*Image Dimensions*/
-#define R_DIM 120
-#define C_DIM 160
-#define NUM_PIX R_DIM*C_DIM
+int16_t kernel_x[K_DIM][K_DIM] = {
+		// SOBEL kernel
+            {-1, 0, 1},
+            {-2, 0, 2},
+            {-1, 0, 1}
+        };
 
-/*Kernel Dimensions*/
-#define K_DIM 3 //Unless otherwise specified, kernel is 3x3
-
+int16_t kernel_y[K_DIM][K_DIM] = {
+        // SOBEL kernel
+            {1, 2, 1},
+            {0, 0, 0},
+            {-1, -2, -1}
+        };
 
 /*******************
  *    FUNCTIONS    *
@@ -303,7 +302,7 @@ void printRowSum(pixel A[R_DIM][C_DIM]) {
     		row_acc += A[i][j];
     	}
 
-    	printf("\trow sum for %3d is %d\n", i, row_acc);
+    	dprintf("\trow sum for %3d is %d\n", i, row_acc);
     }
 }
 
@@ -319,7 +318,7 @@ void printRowSumTheta(double A[R_DIM][C_DIM]) {
     		row_acc += A[i][j];
     	}
 
-    	printf("\trow sum for %3d is %f\n", i, row_acc);
+    	dprintf("\trow sum for %3d is %f\n", i, row_acc);
     }
 }
 
@@ -345,6 +344,3 @@ void edge2bin(pixel E[R_DIM][C_DIM], pixel B[R_DIM][C_DIM], short u_t) {
         };
     };
 };
-
-#endif
-

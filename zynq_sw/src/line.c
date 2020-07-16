@@ -20,13 +20,34 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef ATTITUDE_HEADER
-#define ATTITUDE_HEADER
+#include "line.h"
+#include "common.h"
 
-float find_roll(const float result[3]);
+#include <math.h>
 
-float find_pitch(const float results[3]);
+Vec2D find_intersection(Line2D* L1, Line2D* L2){
+    //3d ordered triple representing the intersection
+    float P[3];
+    P[0] = L1->b*L2->c - L2->b*L1->c;
+    P[1] = L2->a*L1->c - L1->a*L2->c;
+    P[2] = L1->a*L2->b - L2->a*L1->b;
 
-void find_nadir(const float results[3], float nadir[3]);
+    Vec2D intersection;
 
-#endif
+    if(P[2] == 0){
+        //lines do not intersect
+    	intersection.x = INFINITY;
+    	intersection.y = INFINITY;
+        return intersection;
+    }else{
+        //Project the 3d triple onto 2D to get the intersection
+        intersection.x = P[0]/P[2];
+        intersection.y = P[1]/P[2];
+        return intersection;
+    }
+} 
+
+void printline(Line2D* L)
+{
+	dprintf("%fx + %fy + %f = 0\n", L->a, L->b, L->c);
+}

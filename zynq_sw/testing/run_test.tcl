@@ -1,3 +1,5 @@
+#!xsct
+
 set image_variable_name "TestImg"
 
 set app_name "horizon_detection"
@@ -101,8 +103,9 @@ mwr -bin -file $testing_dir/$testfile $image_base_addr [expr 160*120]
 puts "Running program"
 con -block
 
+puts "Main finished, reading results"
 # should stop at end_of_main label
-set result_addr [lindex [print &result] 2]
+set result_addr [lindex [print &highRatio] 2]
 set result_value [lindex [mrd $result_addr] 1]
 
 # parse result as float
