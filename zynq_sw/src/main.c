@@ -60,42 +60,42 @@ int main() {
     dprintf("\nEdge Detection Testing Start\n");
 
     conv2dGauss(TestImg, blurred, kernel_gauss);
-    printf("\tGaussian blurring of test image complete\n");
+    dprintf("\tGaussian blurring of test image complete\n");
     printRowSum(blurred);
 
     conv2d(blurred, edge_x, kernel_x);
-    printf("\tx-direction 2D-convolution complete\n");
+    dprintf("\tx-direction 2D-convolution complete\n");
     printRowSum(edge_x);
 
     conv2d(blurred, edge_y, kernel_y);
-    printf("\ty-direction 2D-convolution complete\n");
+    dprintf("\ty-direction 2D-convolution complete\n");
     printRowSum(edge_y);
 
 
     imgHypot(edge_x, edge_y, grad);
-    printf("\tObtained gradient magnitude map\n");
+    dprintf("\tObtained gradient magnitude map\n");
     printRowSum(grad);
 
     imgTheta(edge_x, edge_y, theta);
-    printf("\tObtained gradient phase map\n\r");
+    dprintf("\tObtained gradient phase map\n\r");
     printRowSumTheta(theta);
 
     imgTheta(edge_x, edge_y, theta);
     dprintf("\tObtained gradient phase map\n\r");
 
     nonMaxSuppression(suppressed, grad, theta);
-    printf("\tNon-Max suppression complete\n\r");
+    dprintf("\tNon-Max suppression complete\n\r");
     //printRowSum(suppressed);
 
     doubleThreshold(suppressed, lowRatio, highRatio);
-    printf("\tDouble Thresholding complete\n");
+    dprintf("\tDouble Thresholding complete\n");
     //printRowSum(suppressed);
 
     edgeTracking(suppressed, strong, weak);
-    printf("\tEdge Tracking complete\n\r");
+    dprintf("\tEdge Tracking complete\n\r");
     //printRowSum(suppressed);
 
-    printf("Edge Detection Test Complete\n");
+    dprintf("Edge Detection Test Complete\n");
     //printRowSum(suppressed);
 
     asm volatile ("end_of_main:");

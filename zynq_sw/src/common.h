@@ -25,7 +25,14 @@ SOFTWARE.
 
 #include <stdio.h>
 
+// Define a print function we can turn off
+// This will be controlled through a -DDEBUG compiler flag
+
+#ifdef HD_DEBUG
 #define DEBUG 1
+#else
+#define DEBUG 0
+#endif
 
 #define dprintf(...) \
     do { if (DEBUG) printf(__VA_ARGS__); } while (0);
