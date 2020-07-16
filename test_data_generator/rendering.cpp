@@ -349,12 +349,21 @@ void export_binary(const char* filename, RenderState render_state, SimulationSta
         sizeof(pixels),
         pixels);
 
-    // the Lepton 3.5 data format actually only uses 14 bits per pixel
-    // with the upper two bits set to zero, so we'll discard the two LSb
+    // The Lepton 3.5 data format actually only uses 14 bits per pixel
+    // with the upper two bits set to zero, so we'll discard the two LSb.
     
     for (int i = 0; i < num_pixels; i++)
     {
         pixels[i] = pixels[i] >> 2;
+    }
+
+    // The output from glReadnPixels is flipped so we need to swap all the rows
+    for (int i = 0; i < state.camera_v_res / 2; ++i)
+    {
+        for (int j = 0; j < state.camera_h_res; ++j)
+        {
+            std::swap(pixels[i*state.camera_h_res + j], pixels[(state.camera_v_res - i - 1)*state.camera_h_res + j]);
+        }
     }
 
     FILE* fd = fopen(filename, "wb");
