@@ -95,21 +95,21 @@ void conv2d(pixel A[R_DIM][C_DIM], pixel C[R_DIM][C_DIM], int16_t K[K_DIM][K_DIM
  *             K - 3x3 Convolution Kernel
  *
 *******************************************************/
-void conv2dGauss(pixel A[R_DIM][C_DIM], pixel C[R_DIM][C_DIM], double K[K_DIM][K_DIM]) {
+void conv2dGauss(pixel A[R_DIM][C_DIM], pixel C[R_DIM][C_DIM], float K[K_DIM][K_DIM]) {
     int16_t rows = R_DIM;
     int16_t cols = C_DIM;
     int16_t a, b, i, j;
-    volatile double sum = 0;
+    volatile float sum = 0.0;
 
     /* Iterate through image */
     for (i=1 ; i < rows-1 ; i++) {
         for (j=1 ; j < cols-1 ; j++){
-            sum = 0;
+            sum = 0.0;
             /* Iterate through kernel */
             for (a=-1; a < 2; a++) {
                 for (b=-1; b < 2; b++) {
                     /*Add to the sum*/
-                    sum += A[i+a][j+b]*K[a+1][b+1];
+                    sum = sum + ((float)A[i+a][j+b])*K[a+1][b+1];
                 }
             }
             /* Sum Thresholding */
@@ -265,6 +265,7 @@ void imgHypot (pixel X[R_DIM][C_DIM], pixel Y[R_DIM][C_DIM], pixel C[R_DIM][C_DI
         for (j=0; j < C_DIM-1 ; j++) {
             result =  hypot((double)X[i][j], (double)Y[i][j]);
             C[i][j] = (pixel)result;
+            
         };
     };
 };
@@ -283,11 +284,44 @@ void imgTheta (pixel X[R_DIM][C_DIM], pixel Y[R_DIM][C_DIM], double C[R_DIM][C_D
 
     for (i=0; i < R_DIM-1 ; i++) {
         for (j=0; j < C_DIM-1 ; j++) {
-            result =  atan((double)Y[i][j]/(double)X[i][j]);
-            C[i][j] = result;
+            result =  atan2((double)Y[i][j], (double)X[i][j]);
+            C[i][j] = result;       
         };
     };
 };
+
+// Debugging function for comparing rows of pixels
+void printRowSum(pixel A[R_DIM][C_DIM]) {
+
+    int row_acc = 0; 
+
+    for (int i = 0; i < R_DIM; i++)
+    {
+		row_acc = 0;
+    	for (int j = 0; j < C_DIM; j++)
+    	{
+    		row_acc += A[i][j];
+    	}
+
+    	printf("\trow sum for %3d is %d\n", i, row_acc);
+    }
+}
+
+void printRowSumTheta(double A[R_DIM][C_DIM]) {
+
+    double row_acc = 0; 
+
+    for (int i = 0; i < R_DIM; i++)
+    {
+		row_acc = 0;
+    	for (int j = 0; j < C_DIM; j++)
+    	{
+    		row_acc += A[i][j];
+    	}
+
+    	printf("\trow sum for %3d is %f\n", i, row_acc);
+    }
+}
 
 /********************************************************************
  *    Edge Map to Binary Edge Map Conversion (element-wise)
