@@ -354,7 +354,7 @@ void export_binary(const char* filename, RenderState render_state, SimulationSta
     
     for (int i = 0; i < num_pixels; i++)
     {
-        pixels[i] = 0x3fff - (pixels[i] >> 2);
+        pixels[i] = pixels[i] >> 2;
     }
 
     FILE* fd = fopen(filename, "wb");
