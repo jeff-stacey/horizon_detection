@@ -368,6 +368,6 @@ void edge2Arr(pixel E[R_DIM][C_DIM], Vec2D edge_ind[]) {
 **********************************************************************/
 void edgePrint(Vec2D edge_ind[], uint16_t size) {
     for(uint16_t i = 0; i < size; i++) {
-        dprintf("edge point @ %3f,%3f", edge_ind[i].x, edge_ind[i].y);
+        dprintf("\tedge point @ %3f,%3f\n", edge_ind[i].x, edge_ind[i].y);
     }
 }
