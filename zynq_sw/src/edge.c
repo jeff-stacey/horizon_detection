@@ -331,7 +331,7 @@ void printRowSumTheta(float A[R_DIM][C_DIM]) {
 **********************************************************************/
 uint16_t edge2Arr(pixel E[R_DIM][C_DIM], Vec2D edge_ind[NUM_PIX]) {
     uint16_t i, j;
-    int16_t k, l;
+    float k, l;
     uint16_t edge_iter = 0;
     uint16_t num_points = 0; 
     for (i=1; i < R_DIM-1 ; i++) {
