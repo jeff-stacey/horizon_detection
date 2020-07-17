@@ -198,8 +198,8 @@ void doubleThreshold (pixel A[R_DIM][C_DIM], float lowRatio, float highRatio) {
 	pixel lowThresh  = (pixel)highThresh*lowRatio;
 
 	// Define values of weak and strong edges
-	pixel weak = 25;
-	pixel strong = 225;
+	pixel weak = 0x666;
+	pixel strong = 0x3fff;
 
 	// Filter the matrix to contain only 3 possible values (strong, weak, 0)
     for (i=1; i < R_DIM-1 ; i++) {
@@ -323,24 +323,51 @@ void printRowSumTheta(double A[R_DIM][C_DIM]) {
 }
 
 /********************************************************************
- *    Edge Map to Binary Edge Map Conversion (element-wise)
+ *    Count # of Edge Points for Array Creation
  *    Inputs:  E   - Edge map image
- *             B   - Result Matrix
- *             u_t - Upper threshold value
  *
 **********************************************************************/
+uint16_t countEdges(pixel E[R_DIM][C_DIM]) {
+    uint16_t i, j;
+    uint16_t edges = 0;
 
-void edge2bin(pixel E[R_DIM][C_DIM], pixel B[R_DIM][C_DIM], short u_t) {
-
-    short i, j;
-
-    for (i=0; i < R_DIM-1 ; i++) {
-        for (j=0; j < C_DIM-1 ; j++) {
-            if (E[i][j] < u_t) {
-                B[i][j] = 0;
-            } else {
-                B[i][j] = 1;
+    for (i = 1; i < R_DIM-1; i++) {
+    	for (j = 1; j < C_DIM-1; j++) {
+    		if (E[i][j] != 0) {
+                edges++;
             }
-        };
-    };
+    	}
+    }
+    return edges;
+}
+
+/********************************************************************
+ *    Converts Edge Map into Array of Vec2D structs
+ *    Inputs:  E   - Edge map image
+ *
+**********************************************************************/
+void edge2Arr(pixel E[R_DIM][C_DIM], Vec2D edge_ind[]) {
+    uint16_t i, j;
+    uint16_t edge_iter = 0;
+    for (i=1; i < R_DIM-1 ; i++) {
+        for (j=1; j < C_DIM-1 ; j++) {
+            if (E[i][j] != 0) {
+                // Save edge indicies
+                edge_ind[edge_iter].x = i;
+                edge_ind[edge_iter].y = j;
+                edge_iter++;
+            }
+        }
+    }
 };
+
+/********************************************************************
+ *    Prints out contents of edge points array
+ *    Inputs:  edge_points  - array of Vec2D structures
+ *
+**********************************************************************/
+void edgePrint(Vec2D edge_ind[], uint16_t size) {
+    for(uint16_t i = 0; i < size; i++) {
+        dprintf("edge point @ %3f,%3f", edge_ind[i].x, edge_ind[i].y);
+    }
+}

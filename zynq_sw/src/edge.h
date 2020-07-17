@@ -24,6 +24,7 @@ SOFTWARE.
 #define CONV_HEADER
 
 #include <stdint.h>
+#include "linalg.h"
 
 /*TODO: HELPER FUNCTIONS FOR EDGE DETECTION
     - DONE 2d convolve
@@ -133,13 +134,25 @@ void printRowSum(pixel A[R_DIM][C_DIM]);
 void printRowSumTheta(double A[R_DIM][C_DIM]);
 
 /********************************************************************
- *    Edge Map to Binary Edge Map Conversion (element-wise)
+ *    Count # of Edge Points for Array Creation
  *    Inputs:  E   - Edge map image
- *             B   - Result Matrix
- *             u_t - Upper threshold value
  *
 **********************************************************************/
-void edge2bin(pixel E[R_DIM][C_DIM], pixel B[R_DIM][C_DIM], short u_t);
+uint16_t countEdges(pixel E[R_DIM][C_DIM]);
+
+/********************************************************************
+ *    Converts Edge Map into Array of Vec2D structs
+ *    Inputs:  E   - Edge map image
+ *
+**********************************************************************/
+void edge2Arr(pixel E[R_DIM][C_DIM], Vec2D edge_ind[]);
+
+/********************************************************************
+ *    Prints out contents of edge points array
+ *    Inputs:  edge_points  - array of Vec2D structures
+ *
+**********************************************************************/
+void edgePrint(Vec2D edge_ind[], uint16_t size);
 
 #endif
 
