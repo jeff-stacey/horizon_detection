@@ -126,10 +126,10 @@ void conv2dGauss(pixel A[R_DIM][C_DIM], pixel C[R_DIM][C_DIM], float K[K_DIM][K_
  *             T - 120x160 Gradient Phase Matrix
  *
 **********************************************************************/
-void nonMaxSuppression(pixel A[R_DIM][C_DIM], pixel G[R_DIM][C_DIM], double T[R_DIM][C_DIM]) {
+void nonMaxSuppression(pixel A[R_DIM][C_DIM], pixel G[R_DIM][C_DIM], float T[R_DIM][C_DIM]) {
 
 	uint16_t i, j, q, r;
-	double angle = 0;
+	float angle = 0;
 	pixel current;
 
 	// Iterate through matrix
@@ -258,11 +258,11 @@ void edgeTracking(pixel A[R_DIM][C_DIM], pixel strong, pixel weak) {
 void imgHypot (pixel X[R_DIM][C_DIM], pixel Y[R_DIM][C_DIM], pixel C[R_DIM][C_DIM]) {
 
     uint16_t i, j;
-    double result;
+    float result;
 
     for (i=0; i < R_DIM-1 ; i++) {
         for (j=0; j < C_DIM-1 ; j++) {
-            result =  hypot((double)X[i][j], (double)Y[i][j]);
+            result =  hypot((float)X[i][j], (float)Y[i][j]);
             C[i][j] = (pixel)result;
             
         };
@@ -276,14 +276,14 @@ void imgHypot (pixel X[R_DIM][C_DIM], pixel Y[R_DIM][C_DIM], pixel C[R_DIM][C_DI
  *             C - Result Matrix
  *
 **********************************************************************/
-void imgTheta (pixel X[R_DIM][C_DIM], pixel Y[R_DIM][C_DIM], double C[R_DIM][C_DIM]) {
+void imgTheta (pixel X[R_DIM][C_DIM], pixel Y[R_DIM][C_DIM], float C[R_DIM][C_DIM]) {
 
     uint16_t i, j;
-    double result;
+    float result;
 
     for (i=0; i < R_DIM-1 ; i++) {
         for (j=0; j < C_DIM-1 ; j++) {
-            result =  atan2((double)Y[i][j], (double)X[i][j]);
+            result =  atan2((float)Y[i][j], (float)X[i][j]);
             C[i][j] = result;       
         };
     };
@@ -306,9 +306,9 @@ void printRowSum(pixel A[R_DIM][C_DIM]) {
     }
 }
 
-void printRowSumTheta(double A[R_DIM][C_DIM]) {
+void printRowSumTheta(float A[R_DIM][C_DIM]) {
 
-    double row_acc = 0; 
+    float row_acc = 0; 
 
     for (int i = 0; i < R_DIM; i++)
     {
@@ -323,42 +323,32 @@ void printRowSumTheta(double A[R_DIM][C_DIM]) {
 }
 
 /********************************************************************
- *    Count # of Edge Points for Array Creation
- *    Inputs:  E   - Edge map image
- *
-**********************************************************************/
-uint16_t countEdges(pixel E[R_DIM][C_DIM]) {
-    uint16_t i, j;
-    uint16_t edges = 0;
-
-    for (i = 1; i < R_DIM-1; i++) {
-    	for (j = 1; j < C_DIM-1; j++) {
-    		if (E[i][j] != 0) {
-                edges++;
-            }
-    	}
-    }
-    return edges;
-}
-
-/********************************************************************
  *    Converts Edge Map into Array of Vec2D structs
- *    Inputs:  E   - Edge map image
+ *    Inputs:     E     - Edge map image
+ *             edge_ind - array of x,y structs containing
+ *                        edge point indicies
  *
 **********************************************************************/
-void edge2Arr(pixel E[R_DIM][C_DIM], Vec2D edge_ind[]) {
+uint16_t edge2Arr(pixel E[R_DIM][C_DIM], Vec2D edge_ind[NUM_PIX]) {
     uint16_t i, j;
+    int16_t k, l;
     uint16_t edge_iter = 0;
+    uint16_t num_points = 0; 
     for (i=1; i < R_DIM-1 ; i++) {
         for (j=1; j < C_DIM-1 ; j++) {
             if (E[i][j] != 0) {
-                // Save edge indicies
-                edge_ind[edge_iter].x = i;
-                edge_ind[edge_iter].y = j;
+                // Convert so (0,0) is center of image
+                k = -i + 59.5; // Row conversion (y-value)
+                l = j - 79.5; // column conversion (x-value)
+                // Store
+                edge_ind[edge_iter].x = l;
+                edge_ind[edge_iter].y = k;
                 edge_iter++;
+                num_points++;
             }
         }
     }
+    return num_points;
 };
 
 /********************************************************************

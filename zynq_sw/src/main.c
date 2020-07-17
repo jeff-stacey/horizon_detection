@@ -42,13 +42,14 @@ pixel blurred[120][160];	// Create gaussian blurring step output
 pixel edge_x[120][160]; 	// Create x-direction gradient map output
 pixel edge_y[120][160]; 	// Create y-direction gradient map output
 pixel grad[120][160]; 		// Create Grad-Magnitude output
-double theta[120][160]; 	// Create Grad-Direction output
+float theta[120][160]; 	    // Create Grad-Direction output
 pixel suppressed[120][160]; // Create Output for non-max suppression step
+Vec2D edge_points[19200];   // Create output array for number of edges
 
 // Edge detection parameters
 float lowRatio = 0.3;
 float highRatio = 0.67;
-pixel strong = 0x3fff;  // Totally black pixel == 16383
+pixel strong = 0x3fff;  // Totally black pixel == 16383 == 0x3fff
                         // Totally white pixel == 0
 pixel weak = 0x666;     // set weak to ~10% of total magnitude
 
@@ -93,14 +94,12 @@ int main() {
 
     edgeTracking(suppressed, strong, weak);
     dprintf("\tEdge Tracking complete\n\r");
-    printRowSum(suppressed);
+    //printRowSum(suppressed);
 
     // Current Method of storing Edge_Points (could speed up with malloc?) 
-    uint16_t num_edges = countEdges(suppressed);
-    Vec2D edge_points[num_edges];
-    edge2Arr(suppressed,edge_points);
+    uint16_t num_points = edge2Arr(suppressed,edge_points);
     dprintf("\tEdges Stored in \"edge_points\" array\n\r");
-    edgePrint(edge_points,num_edges);
+    edgePrint(edge_points,num_points);
 
     dprintf("Edge Detection Test Complete\n");
 

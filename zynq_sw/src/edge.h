@@ -90,7 +90,7 @@ void conv2dGauss(pixel A[R_DIM][C_DIM], pixel C[R_DIM][C_DIM], float K[K_DIM][K_
  *             T - 120x160 Gradient Phase Matrix
  *
 **********************************************************************/
-void nonMaxSuppression(pixel A[R_DIM][C_DIM], pixel G[R_DIM][C_DIM], double T[R_DIM][C_DIM]);
+void nonMaxSuppression(pixel A[R_DIM][C_DIM], pixel G[R_DIM][C_DIM], float T[R_DIM][C_DIM]);
 
 /********************************************************************
  *    Double Thresholding
@@ -126,26 +126,22 @@ void imgHypot (pixel X[R_DIM][C_DIM], pixel Y[R_DIM][C_DIM], pixel C[R_DIM][C_DI
  *             C - Result Matrix
  *
 **********************************************************************/
-void imgTheta (pixel X[R_DIM][C_DIM], pixel Y[R_DIM][C_DIM], double C[R_DIM][C_DIM]);
+void imgTheta (pixel X[R_DIM][C_DIM], pixel Y[R_DIM][C_DIM], float C[R_DIM][C_DIM]);
 
-// Debugging function for comparing rows of pixels
+// Debugging functions for comparing rows of pixels
 void printRowSum(pixel A[R_DIM][C_DIM]);
-
-void printRowSumTheta(double A[R_DIM][C_DIM]);
-
-/********************************************************************
- *    Count # of Edge Points for Array Creation
- *    Inputs:  E   - Edge map image
- *
-**********************************************************************/
-uint16_t countEdges(pixel E[R_DIM][C_DIM]);
+void printRowSumTheta(float A[R_DIM][C_DIM]);
 
 /********************************************************************
  *    Converts Edge Map into Array of Vec2D structs
- *    Inputs:  E   - Edge map image
+ *    Inputs:     E     - Edge map image
+ *             edge_ind - array of x,y structs containing
+ *                        edge point indicies
+ * 
+ *    Outputs: num_points - amount of pixels classified as edge points
  *
 **********************************************************************/
-void edge2Arr(pixel E[R_DIM][C_DIM], Vec2D edge_ind[]);
+uint16_t edge2Arr(pixel E[R_DIM][C_DIM], Vec2D edge_ind[NUM_PIX]);
 
 /********************************************************************
  *    Prints out contents of edge points array
