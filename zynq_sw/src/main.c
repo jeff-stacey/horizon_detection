@@ -115,7 +115,7 @@ int main() {
     //chord fitting
     //choose subset of points
     int subset_num = 20;
-    int num_samples = num_points/20;
+    int num_samples = ceil(num_points/subset_num);
     Vec2D samples[num_samples];
     int n = 0;
 
