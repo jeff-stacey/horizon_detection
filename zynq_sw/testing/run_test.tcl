@@ -1,15 +1,17 @@
 #!xsct
 
+##########################
+# General Test Run Setup #
+##########################
+
 set image_variable_name "TestImg"
-
 set app_name "horizon_detection"
-
-# Change this to use non-debug build - not tested
 set build_dir "../workspace/$app_name/Debug"
 set hw_dir "../workspace/zcu104/hw"
 
 set testing_dir [pwd]
 
+# set the workspace
 if [file exist ../workspace] {
     setws ../workspace
 } else {
@@ -19,10 +21,12 @@ if [file exist ../workspace] {
     exit
 }
 
+# parse build skip parameter
 set skip_build_idx [lsearch -exact $argv "-s"]
 
 if {$skip_build_idx >= 0} {
     puts "Skipping build"
+    # remove the flag from argv
     set argv_new {}
     foreach item $argv {
         if {$item ni "-s"} {
@@ -31,10 +35,12 @@ if {$skip_build_idx >= 0} {
     }
     set argv $argv_new
 } else {
+    # build the application
     puts "Building application - pay attention! I can't tell if the build fails."
     app build -name $app_name
 }
 
+# parse hardware parameter
 set using_hw [lsearch -exact $argv "-b"]
 
 if {$using_hw >= 0} {
@@ -57,8 +63,10 @@ if {$using_hw >= 0} {
     #load the script for dealing with the zynq PSU
     source $hw_dir/psu_init.tcl
 
+    # connect to the device
     connect
 
+    # select the PSU target
     targets -set -filter {name =~"PSU"}
 
     psu_init
@@ -86,18 +94,16 @@ puts "Resetting processor"
 mask_write 0xff5e023c [expr (1 << 0) | 0x14] 0
 mwr 0xff9a0000 0x80000218
 
+# add starting and ending breakpoints
 bpadd -addr &main
-
 bpadd -addr &end_of_main
 
 puts "Running until start of main"
 con -block -timeout 5
 
-set image_base_addr [lindex [print &$image_variable_name] 2]
-
-set testfile [lindex $argv 0]
-
 puts "Copying image data from $testfile into memory"
+set image_base_addr [lindex [print &$image_variable_name] 2]
+set testfile [lindex $argv 0]
 mwr -bin -file $testing_dir/$testfile $image_base_addr [expr 160*120]
 
 puts "Running program"
@@ -105,14 +111,53 @@ con -block
 
 puts "Main finished, reading results"
 # should stop at end_of_main label
-set result_addr [lindex [print &highRatio] 2]
-set result_value [lindex [mrd $result_addr] 1]
 
-# parse result as float
-binary scan [binary format i 0x$result_value] f y
-puts $y
+# reads a variable from memory by name
+proc vread { name } {
+    return [lindex [print $name] 2]
+}
+
+# reads 160x120 image to binary file called file_name
+# i'm not using this right now, but it's indended for edge detection debugging
+proc imread { var_name file_name } {
+    set base_addr [lindex [print &$name] 2]
+    mrd -bin -file $file_name [expr 160*120]
+}
+
+set alg_choice [vread alg_choice]
+
+# grab the nadir vector
+set nadir_x [vread nadir[0]]
+set nadir_y [vread nadir[1]]
+set nadir_z [vread nadir[2]]
 
 con
+
+# open the image parameter file and load the data
+set hrz_filename [concat [lindex [split $testfile .] 0].hrz]
+set hrz_file [open $hrz_filename "rb"]
+set hrz [read $hrz_file]
+close $hrz_file
+
+# extract values from the file
+binary scan $hrz ffiifffffff altitude fov_h camera_h_res camera_v_res qw qx qy qz nx ny nz
+
+# i reads signed values, and ours are signed. convert them.
+set camera_h_res [expr {$camera_h_res & 0xffffffff}]}
+set camera_v_res [expr {$camera_v_res & 0xffffffff}]}
+
+# compare values and print results
+if {$alg_choice == 0} {
+    puts "Used edge detection and least-squares fit"
+} elseif {$alg_choice == 1} {
+    puts "Used edge detection and chord fit"
+}
+
+puts "Nadir Vector:"
+puts "   Baseline    Detected    "
+puts [format "x: %.10f  %.10f" $nx $nadir_x]
+puts [format "y: %.10f  %.10f" $ny $nadir_y]
+puts [format "z: %.10f  %.10f" $nz $nadir_z]
 
 # TODO: find a way for the program to indicate it's done so we can run multiple
 # tests in a loop.
