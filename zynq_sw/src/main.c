@@ -103,6 +103,40 @@ int main() {
 
     dprintf("Edge Detection Test Complete\n");
 
+    //begin circle fit
+
+    //3d array containing (x_0, y_o, r) circle parameters
+    float circ_params[3];
+    
+    //two circle fits. just comment out the one you dont want to use
+    //least-squares fit 
+    LScircle_fit(edge_points, num_points, circ_params);
+
+    //chord fitting
+    //choose subset of points
+    int subset_num = 20;
+    int num_samples = num_points/20;
+    Vec2D samples[num_samples];
+    int n = 0;
+
+    for(int i=0; i<num_points; i++){
+        if(i%subset_num == 0){
+            samples[n] = edge_points[i];
+        }
+    }
+
+    lineintersect_circle_fit(samples, num_samples, circ_params);
+    //end chord fitting
+
+    //find nadir vector
+    float nadir[3];
+
+    find_nadir(circ_params, nadir);
+
+    //print results
+    printf("nadir:\n");
+    print3(nadir);
+
     asm volatile ("end_of_main:");
     return 0;
 }
