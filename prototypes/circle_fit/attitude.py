@@ -24,6 +24,37 @@ def find_vert_closest(data):
     
     return p
 
+def find_yaw(mag, T, th_z, th_x):
+    #mag is a 3d vector representing the magnetic field at the magnetometer
+    #if T is an affine transformation matrix, mag is transformed by T*mag
+    
+    #they need to be numpy matrices
+    mag = np.matrix(mag)
+    T = np.matrix(T)
+    
+    mag = T*mag
+    
+    #now the magnetometer should be in the same frame as the camera
+    
+    #rotate magnetometer reading about camera boresight (-z) by th_z
+    mag = np.matrix([[math.cos(th_z), -1*math.sin(th_z), 0],
+               [math.sin(th_z), math.cos(th_z), 0],
+               [0, 0, 1]])*mag
+    #now rotate about x axis
+    mag = np.matrix([[1,              0, 0],
+                       [0, math.cos(th_x), -1*math.sin(th_x)],
+                       [0, math.sin(th_x), math.cos(th_x)]])*mag
+    
+    #now the magnetometer vector should be in the z-x plane, and the angle between
+    #-z and mag is the yaw angle
+    
+    yaw = math.acos(np.clip(np.dot([0,-1], mag), -1.0, 1.0))
+    
+    #this value is relative to the camera boresight and magnetic north
+    
+    
+    return yaw
+
 def find_attitude(r, c, vert):
     #theta_z = roll
     #theta_x = pitch
