@@ -101,10 +101,16 @@ bpadd -addr &end_of_main
 puts "Running until start of main"
 con -block -timeout 5
 
-puts "Copying image data from $testfile into memory"
 set image_base_addr [lindex [print &$image_variable_name] 2]
 set testfile [lindex $argv 0]
+puts "Copying image data from $testfile into memory"
 mwr -bin -file $testing_dir/$testfile $image_base_addr [expr 160*120]
+
+# Set this to 
+# 0 for edge detection and least-squares curve fit
+# 1 for edge detection and chord curve fit
+# 2 for vsearch (not implemented in C yet)
+print -set alg_choice 1
 
 puts "Running program"
 con -block
@@ -158,6 +164,11 @@ puts "   Baseline    Detected    "
 puts [format "x: %.10f  %.10f" $nx $nadir_x]
 puts [format "y: %.10f  %.10f" $ny $nadir_y]
 puts [format "z: %.10f  %.10f" $nz $nadir_z]
+
+set pi [expr acos(-1.0)]
+set err_angle [expr 180 / $pi * acos($nx * $nadir_x + $ny * $nadir_y + $nz * $nadir_z)]
+puts [format "Detected nadir vector is off by %.4f degrees" $err_angle]
+
 
 # TODO: find a way for the program to indicate it's done so we can run multiple
 # tests in a loop.
