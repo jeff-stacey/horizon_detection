@@ -104,10 +104,13 @@ void lineintersect_circle_fit(const Vec2D data[], int len_data, float result[3])
                     v1.y = p2.y - p1.y;
 
                 }else{
+                    //printf("points:\n");
                     p3.x = data[i].x;
                     p3.y = data[i].y;
                     p4.x = data[j+n].x;
                     p4.y = data[j+n].y;
+                    //printf("(%f,%f) (%f,%f) and\n", p1.x,p1.y,p2.x,p2.y);
+                    //printf("(%f,%f) (%f,%f)\n",p3.x,p3.x,p4.x,p4.y);
 
                     v2.x = p4.x - p3.x;
                     v2.y = p4.y - p3.y;
@@ -139,11 +142,18 @@ void lineintersect_circle_fit(const Vec2D data[], int len_data, float result[3])
                         l2.c = -1*v2.x*m2.x - v2.y*m2.y;//m2.x*(m2.y + u2.y) - m2.y*(m2.x + u2.x);
 
                         intersect_temp = find_intersection(&l1, &l2);
+                        
+                        //if lines are parallel
+                        if(isnan(intersect_temp.x) || isnan(intersect_temp.y)){
+                            //just skip this step
+                        }else
+                        {
+                            intersect.x += intersect_temp.x;
+                            intersect.y += intersect_temp.y;
 
-                        intersect.x += intersect_temp.x;
-                        intersect.y += intersect_temp.y;
+                            avg_n++;
+                        }
 
-                        avg_n++;
                     }
                 }
                 m++;
@@ -153,6 +163,7 @@ void lineintersect_circle_fit(const Vec2D data[], int len_data, float result[3])
         n++;
     }
 
+    printf("avg_n: %d\n", avg_n);
     intersect.x /= avg_n;
     intersect.y /= avg_n;
 
@@ -163,6 +174,7 @@ void lineintersect_circle_fit(const Vec2D data[], int len_data, float result[3])
         d.y = data[i].y - intersect.y;
         r += norm(&d);
     }
+    printf("len_data: %d\n", len_data);
     r /= len_data;
 
     result[0] = intersect.x;
@@ -182,21 +194,22 @@ void LScircle_fit(Vec2D data[], int len_data, float result[3])
     float B[3] = {0,0,0};
 
     for(int i=0; i<len_data; i++){
-        A[0][0] += pow(data[i].x,2);
+        A[0][0] += data[i].x*data[i].x;
         A[0][1] += data[i].x*data[i].y;
         A[0][2] += data[i].x;
 
         A[1][0] = A[0][1];
-        A[1][1] += pow(data[i].y,2);
+        A[1][1] += data[i].y*data[i].y;
         A[1][2] += data[i].y;
 
         A[2][0] = A[0][2];
         A[2][1] = A[1][2];
         A[2][2] = len_data;
 
-        B[0] += data[i].x*(pow(data[i].x,2) + pow(data[i].y,2));
-        B[1] += data[i].y*(pow(data[i].x,2) + pow(data[i].y,2));
-        B[2] += pow(data[i].x,2) + pow(data[i].y,2);
+        float temp = data[i].x*data[i].x + data[i].y*data[i].y;
+        B[0] += data[i].x*temp;//data[i].x*(pow(data[i].x,2) + pow(data[i].y,2));
+        B[1] += data[i].y*temp;//data[i].y*(pow(data[i].x,2) + pow(data[i].y,2));
+        B[2] += temp;//pow(data[i].x,2) + pow(data[i].y,2);
     }
     
 
@@ -208,6 +221,6 @@ void LScircle_fit(Vec2D data[], int len_data, float result[3])
 
     result[0] = 0.5*result[0];
     result[1] = 0.5*result[1];
-    result[2] = sqrt(result[2] + pow(result[0],2) + pow(result[1],2));
+    result[2] = sqrt(result[2] + result[0]*result[0] + result[1]*result[1]);//sqrt(result[2] + pow(result[0],2) + pow(result[1],2));
 
 }

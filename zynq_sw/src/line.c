@@ -36,8 +36,8 @@ Vec2D find_intersection(Line2D* L1, Line2D* L2){
 
     if(P[2] == 0){
         //lines do not intersect
-    	intersection.x = INFINITY;
-    	intersection.y = INFINITY;
+    	intersection.x = NAN;
+    	intersection.y = NAN;
         return intersection;
     }else{
         //Project the 3d triple onto 2D to get the intersection

@@ -91,6 +91,48 @@ float find_pitch(const float results[3])
 	return atan((k/d)*tan(FOV/2)) + asin(E_RADIUS/(E_RADIUS+ALTITUDE));
 }
 
+float find_yaw(const float mag[3], const float T[3][3], const float theta_x, const float theta_z)
+{
+	/*
+	mag is the 3 dimensional magnetometer vector
+	T is the affine transformation matrix
+	th_x is the pitch angle (rotation about x, from camera boresight to horizon vertex)
+	th_z is the roll angle (rotation about -z, between camera vertical and horizon vertex to centre screen)
+	*/
+
+	//put magnetometer into local array
+	//I'm doing this because I dont know where the magnetometer value will be in memory
+	//and I dont want to mess with it if we pass the reference to it directly
+	float magnet[3];
+
+	//transform magnetometer value into camera frame of reference
+	multiply33by31(T, mag, magnet);
+
+	//rotate magnetometer value around x and then around z
+	float Rx[3][3] = {{1, 0, 0}, {0, cos(theta_x), -1*sin(theta_x)}, {0, sin(theta_x), cos(theta_x)}};
+	float Rz[3][3] = {{cos(theta_z), -1*sin(theta_z), 0}, {sin(theta_z), cos(theta_z), 0}, {0, 0, 1}};
+
+	float m_temp[3];
+
+	multiply33by31(Rx, magnet, m_temp);
+	multiply33by31(Rz, m_temp, magnet);
+
+	//magnetometer value is in x-z plane
+	//yaw should be angle between -z and magnet
+	//[0,0,-1]dot[magx,magy,magz]
+	float theta_y = acos(-1*magnet[2]);
+
+	//determine the sign of the angle
+	float A[2][2] = {{0, magnet[0]}, {-1, magnet[2]}};
+
+	if(det2(A) < 0){
+		theta_y = -1*theta_y;
+	}
+
+	return theta_y;
+
+}
+
 void find_nadir(const float results[3], float nadir[3])
 {
 	//result is an array containing circle parameters (x_0,y_0,r)
@@ -100,7 +142,7 @@ void find_nadir(const float results[3], float nadir[3])
 	float Rx[3][3] = {{1, 0, 0}, {0, cos(theta_x), -1*sin(theta_x)}, {0, sin(theta_x), cos(theta_x)}};
 	float Rz[3][3] = {{cos(theta_z), -1*sin(theta_z), 0}, {sin(theta_z), cos(theta_z), 0}, {0, 0, 1}};
 
-	float nad[3] = {0, 0, 1};
+	float nad[3] = {0, 0, -1};
 
 
 	//rotate nadir by theta_x about x

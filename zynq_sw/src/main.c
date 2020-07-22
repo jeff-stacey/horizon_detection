@@ -41,7 +41,7 @@ pixel TestImg[120][160];
 // 0 : edge detection and least-squares curve fitting
 // 1 : edge detection and chord curve fitting
 // 2 : vsearch (not yet implemented)
-int alg_choice = 0;
+int alg_choice = 1;
 
 // Edge detection parameters
 float lowRatio = 0.3;
@@ -128,13 +128,23 @@ int main() {
             //choose subset of points
             dprintf("Choosing point subset\n");
             int num_samples = ceil(num_points/subset_num);
+            printf("%d", num_samples);
             Vec2D samples[num_samples];
             int n = 0;
 
             for(int i=0; i<num_points; i++){
                 if(i%subset_num == 0){
-                    samples[n] = edge_points[i];
+                    printf("data p: (%f,%f)\n", edge_points[i].x, edge_points[i].y);
+                    samples[n].x = edge_points[i].x;
+                    samples[n].y = edge_points[i].y;
+                    printf("samples: (%f,%f)\n", samples[n].x, samples[n].y);
+                    n++;
                 }
+            }
+
+            printf("points chosen:\n");
+            for(int i=0; i<num_samples; i++){
+                printf("(%f,%f)\n", samples[i].x, samples[i].y);
             }
             
             dprintf("Fitting curve\n");
@@ -150,6 +160,7 @@ int main() {
     //print results
     printf("nadir:\n");
     print3(nadir);
+    printf("AAAA\n");
 
     asm volatile ("end_of_main:");
     return 0;

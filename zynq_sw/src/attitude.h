@@ -27,6 +27,8 @@ float find_roll(const float result[3]);
 
 float find_pitch(const float results[3]);
 
+float find_yaw(const float mag[3], const float T[3][3], const float th_x, const float th_z);
+
 void find_nadir(const float results[3], float nadir[3]);
 
 #endif
