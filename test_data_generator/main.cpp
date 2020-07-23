@@ -102,7 +102,8 @@ void start_gui(RenderState render_state, SimulationState state)
 
     {
         char wmm_coeff_filename[] = "WMM_2020/WMM.COF";
-        if(!MAG_robustReadMagModels(wmm_coeff_filename, reinterpret_cast<MAGtype_MagneticModel* (*)[]>(&magnetic_models), 1))
+        MAGtype_MagneticModel** magnetic_models_ptr = magnetic_models;
+        if(!MAG_robustReadMagModels(wmm_coeff_filename, &magnetic_models_ptr, 1))
         {
             std::cerr << "Magnetic field coefficients file WMM_2020/WMM.COF not found." << std::endl;
         }
@@ -152,7 +153,7 @@ void start_gui(RenderState render_state, SimulationState state)
             ImGui::Text("Noise");
 
             ImGui::InputFloat("Noise seed", &state.noise_seed);
-            ImGui::InputFloat("Noise stdev", &state.noise_stdev);
+            ImGui::SliderFloat("Noise stdev", &state.noise_stdev, 0.0f, 0.2f, "%.4f", 2);
             if (ImGui::Button("Regenerate Noise"))
             {
                 generate_noise(state.noise_seed, state.noise_stdev, render_state.noise, CAMERA_H_RES * CAMERA_V_RES);
