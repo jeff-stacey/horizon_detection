@@ -60,6 +60,18 @@ void Quaternion::print()
          << z << endl;
 }
 
+Vec3 Quaternion::apply_rotation(const Vec3& x)
+{
+    Quaternion x_quat;
+    x_quat.w = 0.0f;
+    x_quat.x = x.x;
+    x_quat.y = x.y;
+    x_quat.z = x.z;
+
+    Quaternion result = (*this).inverse() * x_quat * (*this);
+    return Vec3(result.x, result.y, result.z);
+}
+
 Quaternion Quaternion::roll(float angle)
 {
     float cosine = cosf(0.5f * angle);
@@ -94,6 +106,11 @@ Quaternion Quaternion::yaw(float angle)
     result.y = sine;
 
     return result;
+}
+
+float Vec3::magnitude()
+{
+    return sqrtf(x*x + y*y + z*z);
 }
 
 Vec3 operator*(float lhs, const Vec3& rhs)
