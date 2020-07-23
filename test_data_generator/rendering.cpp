@@ -27,129 +27,6 @@ struct Vertex
 
 static_assert(sizeof(Vertex) == 2 * sizeof(Vec3), "Vertex has to be packed");
 
-static Mesh load_mesh(const char *filename)
-{
-    // load mesh
-    fastObjMesh *mesh = fast_obj_read(filename);
-
-    std::vector<Vertex> vertices;
-
-    // for each group
-    for (unsigned int g = 0; g < mesh->group_count; g++)
-    {
-        unsigned int idx_offset = 0;
-        fastObjGroup group = mesh->groups[g];
-        // for each face
-        for (unsigned int f = 0; f < group.face_count; f++)
-        {
-            unsigned int num_vertices = mesh->face_vertices[f];
-            if (num_vertices != 3)
-            {
-                cerr << "Only faces with 3 vertices are supported. This one has " << num_vertices
-                     << endl;
-            }
-            for (unsigned int v = 0; v < num_vertices; v++)
-            {
-                fastObjIndex idx = mesh->indices[idx_offset + v];
-
-                Vec3 position;
-                Vec3 normal;
-                //Vec2 uv;
-
-                assert(mesh->position_count > 0);
-
-                position = Vec3(
-                    mesh->positions[3 * idx.p],
-                    mesh->positions[3 * idx.p + 1],
-                    mesh->positions[3 * idx.p + 2]);
-
-                if (mesh->normal_count > 0)
-                {
-                    normal = Vec3(
-                        mesh->normals[3 * idx.n],
-                        mesh->normals[3 * idx.n + 1],
-                        mesh->normals[3 * idx.n + 2]);
-                }
-
-                /*
-                if (mesh->texcoord_count > 0)
-                {
-                    uv = Vec2(
-                        mesh->texcoords[2 * idx.t],
-                        mesh->texcoords[2 * idx.t + 1]);
-                }
-                */
-
-                vertices.push_back(Vertex(position, normal));
-            }
-            idx_offset += num_vertices;
-        }
-    }
-
-    fast_obj_destroy(mesh);
-
-    // create and fill vbo
-    GLuint vbo = 0;
-    glGenBuffers(1, &vbo);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    glBufferData(
-        GL_ARRAY_BUFFER,
-        vertices.size() * sizeof(Vertex),
-        vertices.data(),
-        GL_STATIC_DRAW);
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-
-    GLuint vao = 0;
-    glGenVertexArrays(1, &vao);
-    glBindVertexArray(vao);
-    glBindBuffer(GL_ARRAY_BUFFER, vbo);
-    {
-        unsigned int stride = sizeof(Vertex);
-        unsigned int location = 0;  // pos
-        GLvoid* offset = 0;
-        glEnableVertexAttribArray(location);
-        glVertexAttribPointer(
-            location,
-            3,  // # components
-            GL_FLOAT,
-            GL_FALSE, // normalized int conversion
-            stride,
-            offset);
-        
-        location = 1; // normal
-        offset = (GLvoid*)offsetof(Vertex, normal);
-        glEnableVertexAttribArray(location);
-        glVertexAttribPointer(
-            location,
-            3,  // # components
-            GL_FLOAT,
-            GL_FALSE,
-            stride,
-            offset);
-
-        /*
-        location = 2; // texcoords
-        offset = (GLvoid*)offsetof(Vertex, uv);
-        glEnableVertexAttribArray(location);
-        glVertexAttribPointer(
-            location,
-            2,  // # components
-            GL_FLOAT,
-            GL_FALSE,
-            stride,
-            offset);
-        */
-    }
-    glBindBuffer(GL_ARRAY_BUFFER, 0);
-    glBindVertexArray(0);
-
-    Mesh result;
-    result.vao = vao;
-    result.size = vertices.size();
-
-    return result;
-}
-
 static GLint compile_shader(const char* filename, GLuint shader_type)
 {
     std::ifstream shader_file;
@@ -228,81 +105,8 @@ static void make_perspective_matrix(float* data, float near, float far, float fo
     memcpy(data, matrix_data, sizeof(matrix_data));
 }
 
-static void draw_mesh(Mesh mesh, GLint shader_program, Vec3 position, Vec3 scale, Quaternion camera, float* perspective_matrix)
-{
-    glUseProgram(shader_program);
-
-    float identity_matrix[9] = {
-        1.0f, 0.0f, 0.0f,
-        0.0f, 1.0f, 0.0f,
-        0.0f, 0.0f, 1.0f
-    };
-
-    Vec3 zero_vector;
-
-    float camera_orientation_matrix[9] = {};
-    camera.inverse().to_matrix(camera_orientation_matrix);
-    
-    GLuint rotation_uniform_location = 
-        glGetUniformLocation(
-            shader_program,
-            "rotation");
-    glUniformMatrix3fv(
-        rotation_uniform_location,
-        1,       // 1 matrix
-        GL_TRUE, // transpose (row to column major)
-        (GLfloat*)identity_matrix);
-
-    GLuint origin_uniform_location = 
-        glGetUniformLocation(
-            shader_program,
-            "origin");
-    glUniform3fv(origin_uniform_location, 1, (GLfloat*)&position);
-
-    GLuint camera_pos_uniform_location = 
-        glGetUniformLocation(
-            shader_program,
-            "camera_pos");
-    glUniform3fv(camera_pos_uniform_location, 1, (GLfloat*)&zero_vector);
-
-    GLuint camera_orientation_uniform_location = 
-        glGetUniformLocation(
-            shader_program,
-            "camera_orientation");
-    glUniformMatrix3fv(
-        camera_orientation_uniform_location,
-        1,
-        GL_TRUE,
-        (GLfloat*)camera_orientation_matrix);
-
-    GLuint scale_uniform_location =
-        glGetUniformLocation(
-            shader_program,
-            "scale");
-    glUniform3fv(scale_uniform_location, 1, (GLfloat*)&scale);
-
-    GLuint perspective_uniform_location = 
-        glGetUniformLocation(
-            shader_program,
-            "perspective");
-    glUniformMatrix4fv(
-        perspective_uniform_location,
-        1,
-        GL_TRUE,
-        (GLfloat*)perspective_matrix);
-
-    glBindVertexArray(mesh.vao);
-    glDrawArrays(
-        GL_TRIANGLES,
-        0,  // starting idx
-        (int)mesh.size
-    );
-}
-
 void render_frame(RenderState render_state, SimulationState state, uint32_t width, uint32_t height)
 {
-    const float earth_radius = 6371.0f; // km
-
     glViewport(0, 0, width, height);
 
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
@@ -311,13 +115,17 @@ void render_frame(RenderState render_state, SimulationState state, uint32_t widt
 
     glBindTexture(GL_TEXTURE_2D, render_state.noise_texture);
 
-    GLint nadir_uniform_location = glGetUniformLocation(render_state.screen_shader, "nadir");
-    glUniform3fv(nadir_uniform_location, 1, (GLfloat*)&state.nadir);
+    GLint location = glGetUniformLocation(render_state.screen_shader, "nadir");
+    glUniform3fv(location, 1, (GLfloat*)&state.nadir);
 
-    GLint screen_width_uniform_location = glGetUniformLocation(render_state.screen_shader, "screen_width");
-    glUniform1ui(screen_width_uniform_location, width);
-    GLint screen_height_uniform_location = glGetUniformLocation(render_state.screen_shader, "screen_height");
-    glUniform1ui(screen_height_uniform_location, height);
+    location = glGetUniformLocation(render_state.screen_shader, "screen_width");
+    glUniform1ui(location, width);
+
+    location = glGetUniformLocation(render_state.screen_shader, "screen_height");
+    glUniform1ui(location, height);
+
+    location = glGetUniformLocation(render_state.screen_shader, "alpha");
+    glUniform1f(location, cosf(asinf(EARTH_RADIUS / (EARTH_RADIUS + state.altitude))));
 
     glBindVertexArray(render_state.screen_mesh.vao);
     glDrawArrays(
@@ -331,33 +139,32 @@ void render_frame(RenderState render_state, SimulationState state, uint32_t widt
 
 void export_image(const char* filename, RenderState render_state, SimulationState state)
 {
-    render_frame(render_state, state, state.camera_h_res, state.camera_v_res);
+    render_frame(render_state, state, CAMERA_WIDTH, CAMERA_HEIGHT);
 
-    // TODO: variable size array??
-    uint8_t pixels[state.camera_h_res * state.camera_v_res];
+    uint8_t pixels[CAMERA_WIDTH * CAMERA_HEIGHT];
     glReadnPixels(
         0, 0,
-        state.camera_h_res, state.camera_v_res,
+        CAMERA_WIDTH, CAMERA_HEIGHT,
         GL_RED, // rendering is monochrome, but the buffer isn't
         GL_UNSIGNED_BYTE,
         sizeof(pixels),
         pixels);
 
     stbi_flip_vertically_on_write(1);
-    stbi_write_png(filename, state.camera_h_res, state.camera_v_res, 1, pixels, state.camera_h_res);
+    stbi_write_png(filename, CAMERA_WIDTH, CAMERA_HEIGHT, 1, pixels, CAMERA_WIDTH);
     stbi_flip_vertically_on_write(0);
 }
 
 void export_binary(const char* filename, RenderState render_state, SimulationState state)
 {
-    render_frame(render_state, state, state.camera_h_res, state.camera_v_res);
+    render_frame(render_state, state, CAMERA_WIDTH, CAMERA_HEIGHT);
 
-    int num_pixels = state.camera_h_res * state.camera_v_res;
+    int num_pixels = CAMERA_WIDTH * CAMERA_HEIGHT;
 
     uint16_t pixels[num_pixels];
     glReadnPixels(
         0, 0,
-        state.camera_h_res, state.camera_v_res,
+        CAMERA_WIDTH, CAMERA_HEIGHT,
         GL_RED,             // we want a grayscale image
         GL_UNSIGNED_SHORT,  // and 16-bit pixel values
         sizeof(pixels),
@@ -372,11 +179,11 @@ void export_binary(const char* filename, RenderState render_state, SimulationSta
     }
 
     // The output from glReadnPixels is flipped so we need to swap all the rows
-    for (int i = 0; i < state.camera_v_res / 2; ++i)
+    for (int i = 0; i < CAMERA_HEIGHT / 2; ++i)
     {
-        for (int j = 0; j < state.camera_h_res; ++j)
+        for (int j = 0; j < CAMERA_WIDTH; ++j)
         {
-            std::swap(pixels[i*state.camera_h_res + j], pixels[(state.camera_v_res - i - 1)*state.camera_h_res + j]);
+            std::swap(pixels[i*CAMERA_WIDTH + j], pixels[(CAMERA_HEIGHT - i - 1)*CAMERA_WIDTH + j]);
         }
     }
 

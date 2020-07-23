@@ -1,19 +1,24 @@
 #pragma once
 
+#include "constants.h"
 #include "math3d.h"
 #include <stdint.h>
 
 #pragma pack(push, 1)
 struct SimulationState
 {
-    float altitude = 500.0f;
-    float fov_h = 57.0f * 3.14159265f / 180.0f;  // 57 degrees in radians
-    uint32_t camera_h_res = 160;
-    uint32_t camera_v_res = 120;
-    Quaternion camera;// = Quaternion::yaw(3.14159265f * 0.5f);
+    Quaternion camera = DEFAULT_ORIENTATION;
+    Quaternion magnetometer_magnetometer_reference_frame = DEFAULT_MAGNETOMETER_REFERENCE_FRAME;
+
+    float altitude = DEFAULT_ALTITUDE;
+    float latitude = DEFAULT_LATITUDE;
+    float longitude = DEFAULT_LONGITUDE;
+
+    float noise_seed = DEFAULT_NOISE_SEED;
+    float noise_stdev = DEFAULT_NOISE_STDEV;
+
+    // Outputs
     Vec3 nadir;
-    float lattitude;
-    float longitude;
     Vec3 magnetometer;
 
     bool load_state(const char* filename);

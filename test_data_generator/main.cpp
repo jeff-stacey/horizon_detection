@@ -100,16 +100,17 @@ void start_gui(RenderState render_state, SimulationState state)
 
     MAGtype_GeoMagneticElements magnetic_field;
 
-    if(!MAG_robustReadMagModels("WMM_2020/WMM.COF", reinterpret_cast<MAGtype_MagneticModel* (*)[]>(&magnetic_models), 1))
     {
-        std::cerr << "Magnetic field coefficients file WMM_2020/WMM.COF not found." << std::endl;
+        char wmm_coeff_filename[] = "WMM_2020/WMM.COF";
+        if(!MAG_robustReadMagModels(wmm_coeff_filename, reinterpret_cast<MAGtype_MagneticModel* (*)[]>(&magnetic_models), 1))
+        {
+            std::cerr << "Magnetic field coefficients file WMM_2020/WMM.COF not found." << std::endl;
+        }
     }
 
     MAG_SetDefaults(&ellipsoid, &geoid);
 
     char filename_buf[256] = {};
-    float noise_seed = 1.0f;
-    float noise_stdev = 0.01f;
 
     bool running = true;
     while (running)
@@ -145,23 +146,23 @@ void start_gui(RenderState render_state, SimulationState state)
                 file_extension[3] = 0;
             }
 
-            ImGui::InputFloat("Noise seed", &noise_seed);
-            ImGui::InputFloat("Noise standard deviation", &noise_stdev);
+            ImGui::InputFloat("Altitude", &state.altitude);
+            ImGui::InputFloat("Noise seed", &state.noise_seed);
+            ImGui::InputFloat("Noise standard deviation", &state.noise_stdev);
             if (ImGui::Button("Regenerate Noise"))
             {
-                generate_noise(noise_seed, noise_stdev, render_state.noise, CAMERA_H_RES * CAMERA_V_RES);
+                generate_noise(state.noise_seed, state.noise_stdev, render_state.noise, CAMERA_H_RES * CAMERA_V_RES);
                 glTextureSubImage2D(render_state.noise_texture, 0, 0, 0, CAMERA_H_RES, CAMERA_V_RES, GL_RED, GL_FLOAT, render_state.noise);
-                noise_seed += 1.0f;
+                state.noise_seed += 1.0f;
             }
 
-            ImGui::InputFloat("Lattitude (deg)", &state.lattitude);
+            ImGui::InputFloat("Latitude (deg)", &state.latitude);
             ImGui::InputFloat("Longitude (deg)", &state.longitude);
 
             spherical_coord.lambda = state.longitude;
-            spherical_coord.phig = state.lattitude;
+            spherical_coord.phig = state.latitude;
 
-            // TODO: This is used in several places
-            spherical_coord.r = 6871.0;
+            spherical_coord.r = EARTH_RADIUS + state.altitude;
 
             MAG_SphericalToGeodetic(ellipsoid, spherical_coord, &geo_coord);
             MAG_Geomag(ellipsoid, spherical_coord, geo_coord, magnetic_models[0], &magnetic_field);
@@ -170,9 +171,6 @@ void start_gui(RenderState render_state, SimulationState state)
             ImGui::InputFloat("x", &magnetic_field_camera.x);
             ImGui::InputFloat("y", &magnetic_field_camera.y);
             ImGui::InputFloat("z", &magnetic_field_camera.z);
-            ImGui::InputDouble("Strength", &magnetic_field.F);
-            float mag2 = magnetic_field_camera.magnitude();
-            ImGui::InputFloat("Strength2", &mag2);
         }
 
         if (!typing)
