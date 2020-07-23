@@ -124,6 +124,7 @@ void start_gui(RenderState render_state, SimulationState state)
         // ----------
         bool typing = false;  // Used to silence keyboard control when using a textbox
         {
+            ImGui::Text("Export Test Data");
             // Hack: -4 in buffer size leaving room for file extension
             typing |= ImGui::InputText("Filename", filename_buf, sizeof(filename_buf) - 4);
             if (ImGui::Button("Export"))
@@ -146,9 +147,12 @@ void start_gui(RenderState render_state, SimulationState state)
                 file_extension[3] = 0;
             }
 
-            ImGui::InputFloat("Altitude", &state.altitude);
+            ImGui::Separator();
+
+            ImGui::Text("Noise");
+
             ImGui::InputFloat("Noise seed", &state.noise_seed);
-            ImGui::InputFloat("Noise standard deviation", &state.noise_stdev);
+            ImGui::InputFloat("Noise stdev", &state.noise_stdev);
             if (ImGui::Button("Regenerate Noise"))
             {
                 generate_noise(state.noise_seed, state.noise_stdev, render_state.noise, CAMERA_H_RES * CAMERA_V_RES);
@@ -156,6 +160,11 @@ void start_gui(RenderState render_state, SimulationState state)
                 state.noise_seed += 1.0f;
             }
 
+            ImGui::Separator();
+
+            ImGui::Text("Coordinates");
+
+            ImGui::InputFloat("Altitude", &state.altitude);
             ImGui::InputFloat("Latitude (deg)", &state.latitude);
             ImGui::InputFloat("Longitude (deg)", &state.longitude);
 
@@ -166,11 +175,10 @@ void start_gui(RenderState render_state, SimulationState state)
 
             MAG_SphericalToGeodetic(ellipsoid, spherical_coord, &geo_coord);
             MAG_Geomag(ellipsoid, spherical_coord, geo_coord, magnetic_models[0], &magnetic_field);
-            Vec3 magnetic_field_camera(magnetic_field.Y, magnetic_field.X, -magnetic_field.Z);
-            magnetic_field_camera = state.camera.apply_rotation(magnetic_field_camera);
-            ImGui::InputFloat("x", &magnetic_field_camera.x);
-            ImGui::InputFloat("y", &magnetic_field_camera.y);
-            ImGui::InputFloat("z", &magnetic_field_camera.z);
+
+            state.magnetic_field = Vec3(magnetic_field.Y, magnetic_field.X, -magnetic_field.Z);
+            state.magnetic_field = state.camera.apply_rotation(state.magnetic_field);
+            state.magnetometer = (0.001f / MAGNETIC_FIELD_SENSITIVITY) * state.magnetometer_reference_frame.apply_rotation(state.magnetic_field);
         }
 
         if (!typing)
@@ -191,11 +199,18 @@ void start_gui(RenderState render_state, SimulationState state)
 
             state.camera = state.camera * Quaternion::roll(roll) * Quaternion::pitch(pitch) * Quaternion::yaw(yaw);
 
+            ImGui::Separator();
+
+            ImGui::Text("Values");
+
             // calculate nadir vector
             float camera_matrix[9];
             state.camera.inverse().to_matrix(camera_matrix);
             state.nadir = Vec3(-camera_matrix[2], -camera_matrix[5], -camera_matrix[8]);
-            ImGui::InputFloat3("Nadir", (float*)&state.nadir);
+            ImGui::Text("Nadir: (%f, %f, %f)", state.nadir.x, state.nadir.y, state.nadir.z);
+
+            ImGui::Text("Magnetic Field (nGauss): (%.0f, %.0f, %.0f)", state.magnetic_field.x, state.magnetic_field.y, state.magnetic_field.z);
+            ImGui::Text("Magnetometer Reading: (%.0f, %.0f, %.0f)", state.magnetometer.x, state.magnetometer.y, state.magnetometer.z);
         }
 
         // ---------

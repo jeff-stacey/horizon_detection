@@ -294,7 +294,7 @@ RenderState render_init(unsigned int screen_width, unsigned int screen_height)
     }
 
     render_state.noise = new float[CAMERA_H_RES * CAMERA_V_RES];
-    generate_noise(1, 0.05, render_state.noise, CAMERA_H_RES * CAMERA_V_RES);
+    generate_noise(0.0f, 0.01f, render_state.noise, CAMERA_H_RES * CAMERA_V_RES);
 
     // noise texture
     {

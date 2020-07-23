@@ -8,7 +8,7 @@
 struct SimulationState
 {
     Quaternion camera = DEFAULT_ORIENTATION;
-    Quaternion magnetometer_magnetometer_reference_frame = DEFAULT_MAGNETOMETER_REFERENCE_FRAME;
+    Quaternion magnetometer_reference_frame = DEFAULT_MAGNETOMETER_REFERENCE_FRAME;
 
     float altitude = DEFAULT_ALTITUDE;
     float latitude = DEFAULT_LATITUDE;
@@ -19,7 +19,8 @@ struct SimulationState
 
     // Outputs
     Vec3 nadir;
-    Vec3 magnetometer;
+    Vec3 magnetic_field; // nGauss, in camera reference frame
+    Vec3 magnetometer;   // in rotated reference frame
 
     bool load_state(const char* filename);
     void save_state(char* filename);

@@ -21,7 +21,7 @@
 
 #define DEFAULT_ALTITUDE 500.0
 #define DEFAULT_ORIENTATION Quaternion::pitch(M_PI * 0.5)
-#define DEFAULT_MAGNETOMETER_REFERENCE_FRAME Quaternion()
+#define DEFAULT_MAGNETOMETER_REFERENCE_FRAME Quaternion::pitch(-M_PI * 0.5)
 
 // These are in degrees, since WMM model takes degrees
 // This is Victoria, BC :)
@@ -34,12 +34,14 @@
 
 
 
-/******************
- * Camera Details *
- ******************/
+/********************
+ * Hardware Details *
+ ********************/
 
 #define CAMERA_WIDTH 160
 #define CAMERA_HEIGHT 120
 
 // 57 degrees in radians
 #define HORIZONTAL_FOV 57.0 * M_PI / 180.0
+
+#define MAGNETIC_FIELD_SENSITIVITY 0.14
