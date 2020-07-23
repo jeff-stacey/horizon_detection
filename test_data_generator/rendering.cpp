@@ -127,6 +127,9 @@ void render_frame(RenderState render_state, SimulationState state, uint32_t widt
     location = glGetUniformLocation(render_state.screen_shader, "alpha");
     glUniform1f(location, cosf(asinf(EARTH_RADIUS / (EARTH_RADIUS + state.altitude))));
 
+    location = glGetUniformLocation(render_state.screen_shader, "alpha_atmosphere");
+    glUniform1f(location, cosf(asinf((EARTH_RADIUS + state.visible_atmosphere_height) / (EARTH_RADIUS + state.altitude))));
+
     glBindVertexArray(render_state.screen_mesh.vao);
     glDrawArrays(
         GL_TRIANGLES,

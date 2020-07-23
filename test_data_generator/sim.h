@@ -17,6 +17,8 @@ struct SimulationState
     float noise_seed = DEFAULT_NOISE_SEED;
     float noise_stdev = DEFAULT_NOISE_STDEV;
 
+    float visible_atmosphere_height = DEFAULT_VISIBLE_ATMOSPHERE_HEIGHT;
+
     // Outputs
     Vec3 nadir;
     Vec3 magnetic_field; // nGauss, in camera reference frame

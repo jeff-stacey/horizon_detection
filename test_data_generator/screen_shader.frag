@@ -6,6 +6,7 @@ uniform vec3 nadir;
 uniform uint screen_width;
 uniform uint screen_height;
 uniform float alpha;
+uniform float alpha_atmosphere;
 
 uniform sampler2D noise_texture;
 
@@ -26,9 +27,9 @@ void main()
     {
         color = vec3(0.5f, 0.5f, 0.5f);
     }
-    else if (dot(nadir, normalize(dir)) > alpha - 0.05f)
+    else if (dot(nadir, normalize(dir)) > alpha_atmosphere)
     {
-        color = ((dot(nadir, normalize(dir)) - (alpha - 0.05f)) / 0.05f) * vec3(0.5f, 0.5f, 0.5f);
+        color = ((dot(nadir, normalize(dir)) - alpha_atmosphere) / (alpha - alpha_atmosphere)) * vec3(0.5f, 0.5f, 0.5f);
     }
 
     Color = vec4(color + texture(noise_texture, tex_coord).r * vec3(1.0f, 1.0f, 1.0f), 1.0f);

@@ -150,6 +150,11 @@ void start_gui(RenderState render_state, SimulationState state)
 
             ImGui::Separator();
 
+            ImGui::Text("Atmosphere");
+            ImGui::SliderFloat("Visible Height (km)", &state.visible_atmosphere_height, 0.0f, 100.0f);
+
+            ImGui::Separator();
+
             ImGui::Text("Noise");
 
             ImGui::InputFloat("Noise seed", &state.noise_seed);
