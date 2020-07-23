@@ -9,6 +9,10 @@
 #include "imgui/imgui_impl_sdl.h"
 #include "imgui/imgui_impl_opengl3.h"
 
+extern "C" {
+#include "WMM_2020/GeomagnetismHeader.h"
+}
+
 #include <iostream>
 #include <fstream>
 #include <cassert>
@@ -70,27 +74,9 @@ CommandLineOptions parse_args(int argc, char** args)
     return options;
 }
 
-struct RenderMode
-{
-    const char* name = "";
-
-    enum
-    {
-        Default,
-        Debug,
-        Count
-    };
-
-} render_modes[] = {
-    {"Default"},
-    {"Debug"}
-};
-
 void start_gui(RenderState render_state, SimulationState state)
 {
     SDL_ShowWindow(render_state.window);
-
-    glViewport(0, 0, SCREEN_WIDTH_PIXELS, SCREEN_HEIGHT_PIXELS);
 
     // Initialize ImGui
     {
@@ -106,9 +92,24 @@ void start_gui(RenderState render_state, SimulationState state)
 
     Keyboard keys;
 
-    char filename_buf[256] = {};
+    MAGtype_MagneticModel* magnetic_models[1];
+    MAGtype_Ellipsoid ellipsoid;
+    MAGtype_Geoid geoid;
+    MAGtype_CoordSpherical spherical_coord;
+    MAGtype_CoordGeodetic geo_coord;
 
-    int render_mode = RenderMode::Default;
+    MAGtype_GeoMagneticElements magnetic_field;
+
+    if(!MAG_robustReadMagModels("WMM_2020/WMM.COF", reinterpret_cast<MAGtype_MagneticModel* (*)[]>(&magnetic_models), 1))
+    {
+        std::cerr << "Magnetic field coefficients file WMM_2020/WMM.COF not found." << std::endl;
+    }
+
+    MAG_SetDefaults(&ellipsoid, &geoid);
+
+    char filename_buf[256] = {};
+    float noise_seed = 1.0f;
+    float noise_stdev = 0.01f;
 
     bool running = true;
     while (running)
@@ -138,10 +139,40 @@ void start_gui(RenderState render_state, SimulationState state)
                 strncpy(file_extension, ".bin", 4);
                 export_binary(filename_buf, render_state, state);
 
-                strncpy(file_extension, "    ", 4);
-
-                glViewport(0, 0, SCREEN_WIDTH_PIXELS, SCREEN_HEIGHT_PIXELS);
+                file_extension[0] = 0;
+                file_extension[1] = 0;
+                file_extension[2] = 0;
+                file_extension[3] = 0;
             }
+
+            ImGui::InputFloat("Noise seed", &noise_seed);
+            ImGui::InputFloat("Noise standard deviation", &noise_stdev);
+            if (ImGui::Button("Regenerate Noise"))
+            {
+                generate_noise(noise_seed, noise_stdev, render_state.noise, CAMERA_H_RES * CAMERA_V_RES);
+                glTextureSubImage2D(render_state.noise_texture, 0, 0, 0, CAMERA_H_RES, CAMERA_V_RES, GL_RED, GL_FLOAT, render_state.noise);
+                noise_seed += 1.0f;
+            }
+
+            ImGui::InputFloat("Lattitude (deg)", &state.lattitude);
+            ImGui::InputFloat("Longitude (deg)", &state.longitude);
+
+            spherical_coord.lambda = state.longitude;
+            spherical_coord.phig = state.lattitude;
+
+            // TODO: This is used in several places
+            spherical_coord.r = 6871.0;
+
+            MAG_SphericalToGeodetic(ellipsoid, spherical_coord, &geo_coord);
+            MAG_Geomag(ellipsoid, spherical_coord, geo_coord, magnetic_models[0], &magnetic_field);
+            Vec3 magnetic_field_camera(magnetic_field.Y, magnetic_field.X, -magnetic_field.Z);
+            magnetic_field_camera = state.camera.apply_rotation(magnetic_field_camera);
+            ImGui::InputFloat("x", &magnetic_field_camera.x);
+            ImGui::InputFloat("y", &magnetic_field_camera.y);
+            ImGui::InputFloat("z", &magnetic_field_camera.z);
+            ImGui::InputDouble("Strength", &magnetic_field.F);
+            float mag2 = magnetic_field_camera.magnitude();
+            ImGui::InputFloat("Strength2", &mag2);
         }
 
         if (!typing)
@@ -169,22 +200,10 @@ void start_gui(RenderState render_state, SimulationState state)
             ImGui::InputFloat3("Nadir", (float*)&state.nadir);
         }
 
-        if (ImGui::BeginCombo("Render Mode", render_modes[render_mode].name))
-        {
-            for (int i = 0; i < RenderMode::Count; ++i)
-            {
-                if (ImGui::Selectable(render_modes[i].name, i == render_mode))
-                {
-                    render_mode = i;
-                }
-            }
-            ImGui::EndCombo();
-        }
-
         // ---------
         // Rendering
         // ---------
-        render_frame(render_state, state);
+        render_frame(render_state, state, SCREEN_WIDTH_PIXELS, SCREEN_HEIGHT_PIXELS);
 
         ImGui::Render();
         ImGui_ImplOpenGL3_RenderDrawData(ImGui::GetDrawData());

@@ -9,6 +9,7 @@
 #include <vector>
 #include <iostream>
 #include <fstream>
+#include <random>
 
 using std::cout;
 using std::cerr;
@@ -298,27 +299,41 @@ static void draw_mesh(Mesh mesh, GLint shader_program, Vec3 position, Vec3 scale
     );
 }
 
-void render_frame(RenderState render_state, SimulationState state)
+void render_frame(RenderState render_state, SimulationState state, uint32_t width, uint32_t height)
 {
+    const float earth_radius = 6371.0f; // km
+
+    glViewport(0, 0, width, height);
+
     glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 
-    float perspective_matrix[16];
-    make_perspective_matrix(perspective_matrix, 200.0f, 7000.0f, state.fov_h, (float)state.camera_h_res / state.camera_v_res);
+    glUseProgram(render_state.screen_shader);
 
-    draw_mesh(
-        render_state.earth_mesh,
-        render_state.earth_shader,
-        Vec3(0.0f, 0.0f, -6871.0f),
-        6371.0f * Vec3(1.0f, 1.0f, 1.0f),
-        state.camera,
-        perspective_matrix);
+    glBindTexture(GL_TEXTURE_2D, render_state.noise_texture);
+
+    GLint nadir_uniform_location = glGetUniformLocation(render_state.screen_shader, "nadir");
+    glUniform3fv(nadir_uniform_location, 1, (GLfloat*)&state.nadir);
+
+    GLint screen_width_uniform_location = glGetUniformLocation(render_state.screen_shader, "screen_width");
+    glUniform1ui(screen_width_uniform_location, width);
+    GLint screen_height_uniform_location = glGetUniformLocation(render_state.screen_shader, "screen_height");
+    glUniform1ui(screen_height_uniform_location, height);
+
+    glBindVertexArray(render_state.screen_mesh.vao);
+    glDrawArrays(
+        GL_TRIANGLES,
+        0,  // starting idx
+        (int) render_state.screen_mesh.size
+    );
+
+    glBindTexture(GL_TEXTURE_2D, 0);
 }
 
 void export_image(const char* filename, RenderState render_state, SimulationState state)
 {
-    glViewport(0, 0, state.camera_h_res, state.camera_v_res);
-    render_frame(render_state, state);
+    render_frame(render_state, state, state.camera_h_res, state.camera_v_res);
 
+    // TODO: variable size array??
     uint8_t pixels[state.camera_h_res * state.camera_v_res];
     glReadnPixels(
         0, 0,
@@ -335,8 +350,7 @@ void export_image(const char* filename, RenderState render_state, SimulationStat
 
 void export_binary(const char* filename, RenderState render_state, SimulationState state)
 {
-    glViewport(0, 0, state.camera_h_res, state.camera_v_res);
-    render_frame(render_state, state);
+    render_frame(render_state, state, state.camera_h_res, state.camera_v_res);
 
     int num_pixels = state.camera_h_res * state.camera_v_res;
 
@@ -371,6 +385,16 @@ void export_binary(const char* filename, RenderState render_state, SimulationSta
     fclose(fd);
 }
 
+void generate_noise(float seed, float stdev, float* noise, size_t length)
+{
+    std::default_random_engine random_engine(seed);
+    std::normal_distribution<float> normal_dist(0.0f, stdev);
+    for (size_t i = 0; i < length; ++i)
+    {
+        noise[i] = normal_dist(random_engine);
+    }
+}
+
 RenderState render_init(unsigned int screen_width, unsigned int screen_height)
 {
     RenderState render_state;
@@ -402,11 +426,86 @@ RenderState render_init(unsigned int screen_width, unsigned int screen_height)
     }
     glClearColor(0.0f, 0.0f, 0.0f, 0.0f);
 
-    render_state.earth_mesh = load_mesh("earth.obj");
+    {
+        struct ScreenVertex
+        {
+            Vec3 vertex;
+            
+            float u;
+            float v;
+        } screen_mesh[] = {{Vec3(-1.0f, -1.0f, 0.0f), 0.0f, 0.0f},
+                           {Vec3(1.0f, -1.0f, 0.0f),  1.0f, 0.0f},
+                           {Vec3(-1.0f, 1.0f, 0.0f),  0.0f, 1.0f},
+                           {Vec3(1.0f, -1.0f, 0.0f),  1.0f, 0.0f},
+                           {Vec3(1.0f, 1.0f, 0.0f),   1.0f, 1.0f},
+                           {Vec3(-1.0f, 1.0f, 0.0f),  0.0f, 1.0f}};
 
-    render_state.earth_shader = link_program(
-        compile_shader("vshader", GL_VERTEX_SHADER),
-        compile_shader("fshader", GL_FRAGMENT_SHADER));
+        // create and fill vbo
+        GLuint vbo = 0;
+        glGenBuffers(1, &vbo);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        glBufferData(
+            GL_ARRAY_BUFFER,
+            sizeof(screen_mesh),
+            screen_mesh,
+            GL_STATIC_DRAW);
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+
+        GLuint vao = 0;
+        glGenVertexArrays(1, &vao);
+        glBindVertexArray(vao);
+        glBindBuffer(GL_ARRAY_BUFFER, vbo);
+        {
+            unsigned int stride = sizeof(*screen_mesh);
+            unsigned int location = 0;  // pos
+            GLvoid* offset = 0;
+            glEnableVertexAttribArray(location);
+            glVertexAttribPointer(
+                location,
+                3,  // # components
+                GL_FLOAT,
+                GL_FALSE, // normalized int conversion
+                stride,
+                offset);
+
+            location = 1;
+            offset = (void*)sizeof(Vec3); // uv
+            glEnableVertexAttribArray(location);
+            glVertexAttribPointer(
+                location,
+                2, // # componsnts
+                GL_FLOAT,
+                GL_FALSE, // normalized int conversion
+                stride,
+                offset);
+        }
+        glBindBuffer(GL_ARRAY_BUFFER, 0);
+        glBindVertexArray(0);
+
+        render_state.screen_mesh.vao = vao;
+        render_state.screen_mesh.size = sizeof(screen_mesh) / sizeof(*screen_mesh);
+    }
+
+    render_state.noise = new float[CAMERA_H_RES * CAMERA_V_RES];
+    generate_noise(1, 0.05, render_state.noise, CAMERA_H_RES * CAMERA_V_RES);
+
+    // noise texture
+    {
+        glGenTextures(1, &render_state.noise_texture);
+        glBindTexture(GL_TEXTURE_2D, render_state.noise_texture);
+
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);	
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
+        glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, CAMERA_H_RES, CAMERA_V_RES, 0, GL_RED, GL_FLOAT, render_state.noise);
+        glBindTexture(GL_TEXTURE_2D, 0);
+    }
+
+    render_state.screen_shader = link_program(
+        compile_shader("screen_shader.vert", GL_VERTEX_SHADER),
+        compile_shader("screen_shader.frag", GL_FRAGMENT_SHADER));
 
     return render_state;
 }
