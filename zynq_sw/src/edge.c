@@ -69,8 +69,8 @@ void conv2d(pixel A[R_DIM][C_DIM], pixel C[R_DIM][C_DIM], int16_t K[K_DIM][K_DIM
     volatile int16_t sum = 0;
 
     /*Iterate through image*/
-    for (i=1 ; i < rows-1 ; i++) {
-        for (j=1 ; j < cols-1 ; j++){
+    for (i=2 ; i < rows-2 ; i++) {
+        for (j=2 ; j < cols-2 ; j++){
             sum = 0;
             /* Iterate through kernel */
             for (a=-1; a < 2; a++) {
@@ -88,7 +88,7 @@ void conv2d(pixel A[R_DIM][C_DIM], pixel C[R_DIM][C_DIM], int16_t K[K_DIM][K_DIM
 };
 
 /*******************************************************
- *    2D Convolution (kernel is type: double)
+ *    2D Convolution (kernel is type: float)
  *    Inputs:  A - 120x160 Image Matrix
  *             C - 120x160 Result Matrix
  *             K - 3x3 Convolution Kernel
@@ -133,8 +133,8 @@ void nonMaxSuppression(pixel A[R_DIM][C_DIM], pixel G[R_DIM][C_DIM], float T[R_D
 	pixel current;
 
 	// Iterate through matrix
-	for(i = 1; i < R_DIM-1 ; i++) {
-		for(j = 1; j < C_DIM-1 ; j++) {
+	for(i = 2; i < R_DIM-2 ; i++) {
+		for(j = 2; j < C_DIM-2 ; j++) {
 			q = 0x3fff;
 			r = 0x3fff;
 
@@ -186,8 +186,8 @@ void doubleThreshold (pixel A[R_DIM][C_DIM], float lowRatio, float highRatio) {
 	uint16_t i, j;
 	pixel max = 0;
 	pixel a_pix;
-    for (i = 1; i < R_DIM-1 ; i++) {
-        for (j = 1; j < C_DIM-1 ; j++) {
+    for (i = 2; i < R_DIM-2 ; i++) {
+        for (j = 2; j < C_DIM-2 ; j++) {
         	a_pix = A[i][j];
         	if (a_pix > max) max = a_pix;
         };
@@ -202,8 +202,8 @@ void doubleThreshold (pixel A[R_DIM][C_DIM], float lowRatio, float highRatio) {
 	pixel strong = 0x3fff;
 
 	// Filter the matrix to contain only 3 possible values (strong, weak, 0)
-    for (i=1; i < R_DIM-1 ; i++) {
-        for (j=1; j < C_DIM-1 ; j++) {
+    for (i=2; i < R_DIM-2 ; i++) {
+        for (j=2; j < C_DIM-2 ; j++) {
         	a_pix = A[i][j];
         	if (a_pix >= highThresh) {
         		A[i][j] = strong;
@@ -230,8 +230,8 @@ void edgeTracking(pixel A[R_DIM][C_DIM], pixel strong, pixel weak) {
     uint16_t i, j;
 
     // Check around weak edges to see if they're part of a strong edge
-    for (i=1; i < R_DIM-1 ; i++) {
-        for (j=1; j < C_DIM-1 ; j++) {
+    for (i=2; i < R_DIM-2 ; i++) {
+        for (j=2; j < C_DIM-2 ; j++) {
         	if (A[i][j] == weak) {
         		// If any strong pixels around it, assign strong, else assign 0
         		if (A[i-1][j-1] == strong || A[i-1][j] == strong || A[i-1][j+1] == strong ||
@@ -260,8 +260,8 @@ void imgHypot (pixel X[R_DIM][C_DIM], pixel Y[R_DIM][C_DIM], pixel C[R_DIM][C_DI
     uint16_t i, j;
     float result;
 
-    for (i=0; i < R_DIM-1 ; i++) {
-        for (j=0; j < C_DIM-1 ; j++) {
+    for (i=2; i < R_DIM-2 ; i++) {
+        for (j=2; j < C_DIM-2 ; j++) {
             result =  hypot((float)X[i][j], (float)Y[i][j]);
             C[i][j] = (pixel)result;
             
@@ -281,8 +281,8 @@ void imgTheta (pixel X[R_DIM][C_DIM], pixel Y[R_DIM][C_DIM], float C[R_DIM][C_DI
     uint16_t i, j;
     float result;
 
-    for (i=0; i < R_DIM-1 ; i++) {
-        for (j=0; j < C_DIM-1 ; j++) {
+    for (i=2; i < R_DIM-2 ; i++) {
+        for (j=2; j < C_DIM-2 ; j++) {
             result =  atan2((float)Y[i][j], (float)X[i][j]);
             C[i][j] = result;       
         };
@@ -334,8 +334,8 @@ uint16_t edge2Arr(pixel E[R_DIM][C_DIM], Vec2D edge_ind[NUM_PIX]) {
     float k, l;
     uint16_t edge_iter = 0;
     uint16_t num_points = 0; 
-    for (i=1; i < R_DIM-1 ; i++) {
-        for (j=1; j < C_DIM-1 ; j++) {
+    for (i=2; i < R_DIM-2 ; i++) {
+        for (j=2; j < C_DIM-2 ; j++) {
             if (E[i][j] != 0) {
                 // Convert so (0,0) is center of image
                 k = -i + 59.5; // Row conversion (y-value)

@@ -41,7 +41,7 @@ pixel TestImg[120][160];
 // 0 : edge detection and least-squares curve fitting
 // 1 : edge detection and chord curve fitting
 // 2 : vsearch (not yet implemented)
-int alg_choice = 1;
+int alg_choice = 0;
 
 // Edge detection parameters
 float lowRatio = 0.3;
@@ -81,27 +81,27 @@ int main() {
 
         conv2dGauss(TestImg, blurred, kernel_gauss);
         dprintf("\tGaussian blurring of test image complete\n");
-        //printRowSum(blurred);
+        printRowSum(blurred);
 
         conv2d(blurred, edge_x, kernel_x);
         dprintf("\tx-direction 2D-convolution complete\n");
-        //printRowSum(edge_x);
+        printRowSum(edge_x);
 
         conv2d(blurred, edge_y, kernel_y);
         dprintf("\ty-direction 2D-convolution complete\n");
-        //printRowSum(edge_y);
+        printRowSum(edge_y);
 
         imgHypot(edge_x, edge_y, grad);
         dprintf("\tObtained gradient magnitude map\n");
-        //printRowSum(grad);
+        printRowSum(grad);
 
         imgTheta(edge_x, edge_y, theta);
         dprintf("\tObtained gradient phase map\n\r");
-        //printRowSumTheta(theta);
+        printRowSumTheta(theta);
 
         nonMaxSuppression(suppressed, grad, theta);
         dprintf("\tNon-Max suppression complete\n\r");
-        //printRowSum(suppressed);
+        printRowSum(suppressed);
 
         doubleThreshold(suppressed, lowRatio, highRatio);
         dprintf("\tDouble Thresholding complete\n");
@@ -133,9 +133,6 @@ int main() {
 
         find_nadir(circ_params, nadir);
     }
-
-
-
 
     //print results
     printf("nadir:\n");
