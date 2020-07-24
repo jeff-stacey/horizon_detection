@@ -62,10 +62,10 @@ void randomize_state(SimulationState* state, FuzzOptions fuzz)
 {
     if (fuzz.orientation)
     {
-        state->camera.w = random_float();
-        state->camera.x = random_float();
-        state->camera.y = random_float();
-        state->camera.z = random_float();
+        state->camera.w = 2.0f * (random_float() - 0.5f);
+        state->camera.x = 2.0f * (random_float() - 0.5f);
+        state->camera.y = 2.0f * (random_float() - 0.5f);
+        state->camera.z = 2.0f * (random_float() - 0.5f);
         state->camera.normalize();
     }
     if (fuzz.magnetometer_orientation)

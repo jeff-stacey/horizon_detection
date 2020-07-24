@@ -146,11 +146,7 @@ set hrz [read $hrz_file]
 close $hrz_file
 
 # extract values from the file
-binary scan $hrz ffiifffffff altitude fov_h camera_h_res camera_v_res qw qx qy qz nx ny nz
-
-# i reads signed values, and ours are signed. convert them.
-set camera_h_res [expr {$camera_h_res & 0xffffffff}]}
-set camera_v_res [expr {$camera_v_res & 0xffffffff}]}
+binary scan $hrz fffffffffffffffffffffff qw qx qy qz mquatw mquatx mquaty mquatz altitude latitude longitude noise_seed noise_stdev visible_atmosphere_height nx ny nz magx magy magz magreadingx magreadingy magreadingz
 
 # compare values and print results
 if {$alg_choice == 0} {
