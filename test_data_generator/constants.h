@@ -20,7 +20,7 @@
 //These are initial values for various parameters, when not supplied as command line input
 
 #define DEFAULT_ALTITUDE 500.0
-#define DEFAULT_ORIENTATION Quaternion::pitch(M_PI * 0.5)
+#define DEFAULT_ORIENTATION Quaternion::pitch(M_PI * 0.4)
 #define DEFAULT_MAGNETOMETER_REFERENCE_FRAME Quaternion::pitch(-M_PI * 0.5)
 
 // These are in degrees, since WMM model takes degrees
@@ -31,6 +31,7 @@
 #define DEFAULT_NOISE_SEED 1.0
 #define DEFAULT_NOISE_STDEV 0.01
 
+#define DEFAULT_VISIBLE_ATMOSPHERE_HEIGHT 25.0
 
 
 
@@ -45,3 +46,18 @@
 #define HORIZONTAL_FOV 57.0 * M_PI / 180.0
 
 #define MAGNETIC_FIELD_SENSITIVITY 0.14
+
+/**********
+ * Bounds *
+ **********/
+
+// These are upper and lower bounds for user-adjustable parameters
+
+#define MAX_ALTITUDE 600.0
+#define MIN_ALTITUDE 400.0
+
+#define MAX_NOISE_STDEV 0.2
+#define MIN_NOISE_STDEV 0.0
+
+#define MAX_ATMOSPHERE_HEIGHT 100.0
+#define MIN_ATMOSPHERE_HEIGHT 0.0

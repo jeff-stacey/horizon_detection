@@ -10,10 +10,20 @@ using std::endl;
 void Quaternion::normalize()
 {
     float magnitude = sqrtf(w*w + x*x + y*y + z*z);
-    w /= magnitude;
-    x /= magnitude;
-    y /= magnitude;
-    z /= magnitude;
+    if (magnitude)
+    {
+        w /= magnitude;
+        x /= magnitude;
+        y /= magnitude;
+        z /= magnitude;
+    }
+    else
+    {
+        w = 1.0f;
+        x = 0.0f;
+        y = 0.0f;
+        z = 0.0f;
+    }
 }
 
 Quaternion Quaternion::operator*(const Quaternion& rhs) const

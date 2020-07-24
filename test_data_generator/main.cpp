@@ -23,20 +23,102 @@ using std::endl;
 
 const uint32_t SCREEN_WIDTH_PIXELS = 800;
 const uint32_t SCREEN_HEIGHT_PIXELS = 600;
-const uint32_t CAMERA_WIDTH_PIXELS = 160;
-const uint32_t CAMERA_HEIGHT_PIXELS = 120;
-const float FOV_HORIZONTAL = 57 * 3.141592f / 180;
-const float ALTITUDE_KM = 500;
+
+struct FuzzOptions
+{
+    bool orientation = false;;
+    bool magnetometer_orientation = false;
+
+    bool atmosphere_height = false;
+
+    bool altitude = false;
+    bool latitude = false;
+    bool longitude = false;
+
+    bool noise_seed = false;
+    bool noise_stdev = false;
+
+    unsigned int seed = 1;
+    unsigned int count = 1;
+};
+
+float random_float()
+{
+    return (float)rand() / (float)RAND_MAX;
+}
+
+void export_all(std::string filename, RenderState render_state, SimulationState sim_state)
+{
+    std::string png_filename = filename + std::string(".png");
+    std::string bin_filename = filename + std::string(".bin");
+    std::string hrz_filename = filename + std::string(".hrz");
+
+    export_image(png_filename.c_str(), render_state, sim_state);
+    export_binary(bin_filename.c_str(), render_state, sim_state);
+    sim_state.save_state(hrz_filename.c_str());
+}
+
+void randomize_state(SimulationState* state, FuzzOptions fuzz)
+{
+    if (fuzz.orientation)
+    {
+        state->camera.w = random_float();
+        state->camera.x = random_float();
+        state->camera.y = random_float();
+        state->camera.z = random_float();
+        state->camera.normalize();
+    }
+    if (fuzz.magnetometer_orientation)
+    {
+        state->magnetometer_reference_frame.w = random_float();
+        state->magnetometer_reference_frame.x = random_float();
+        state->magnetometer_reference_frame.y = random_float();
+        state->magnetometer_reference_frame.z = random_float();
+        state->magnetometer_reference_frame.normalize();
+    }
+    if (fuzz.atmosphere_height)
+    {
+        float t = random_float();
+        state->visible_atmosphere_height = MAX_ATMOSPHERE_HEIGHT * t + MIN_ATMOSPHERE_HEIGHT * (1.0f - t);
+    }
+    if (fuzz.altitude)
+    {
+        float t = random_float();
+        state->altitude = MAX_ALTITUDE * t + MIN_ALTITUDE * (1.0f - t);
+    }
+    if (fuzz.latitude)
+    {
+        float t = random_float();
+        state->latitude = -180.0f * t + 180.0f * (1.0f - t);
+    }
+    if (fuzz.longitude)
+    {
+        float t = random_float();
+        state->longitude = -90.0f * t + 90.0f * (1.0f - t);
+    }
+    if (fuzz.noise_seed)
+    {
+        // The scaling factor is arbitrary.
+        // It's probably a good idea for the noise seed to vary more than just 0 to 1
+        state->noise_seed = random_float() * 1000.0f;
+    }
+    if (fuzz.noise_stdev)
+    {
+        float t = random_float();
+        state->noise_stdev = MAX_NOISE_STDEV * t + MIN_NOISE_STDEV * (1.0f - t);
+    }
+}
 
 struct CommandLineOptions
 {
     SimulationState loaded_state;
+    FuzzOptions fuzz;
     char* export_filename = nullptr;
 };
 
 void usage()
 {
-    cout << "Usage: ./test_image_generator [--load filename] [--export filename]" << endl;
+    cout << "Usage: ./test_image_generator [--load filename] [--export filename] [--fuzz <fuzz options> end]" << endl;
     exit(1);
 }
 
@@ -67,6 +149,86 @@ CommandLineOptions parse_args(int argc, char** args)
             }
             options.export_filename = args[arg_index];
         }
+        else if (strcmp("--fuzz_options", args[arg_index]) == 0)
+        {
+            while (arg_index < argc)
+            {
+                ++arg_index;
+
+                if (strcmp("orientation", args[arg_index]) == 0)
+                {
+                    options.fuzz.orientation = true;
+                }
+                else if (strcmp("magnetometer_orientation", args[arg_index]) == 0)
+                {
+                    options.fuzz.magnetometer_orientation = true;
+                }
+                else if (strcmp("atmosphere_height", args[arg_index]) == 0)
+                {
+                    options.fuzz.atmosphere_height = true;
+                }
+                else if (strcmp("altitude", args[arg_index]) == 0)
+                {
+                    options.fuzz.altitude = true;
+                }
+                else if (strcmp("latitude", args[arg_index]) == 0)
+                {
+                    options.fuzz.latitude = true;
+                }
+                else if (strcmp("longitude", args[arg_index]) == 0)
+                {
+                    options.fuzz.longitude = true;
+                }
+                else if (strcmp("noise_seed", args[arg_index]) == 0)
+                {
+                    options.fuzz.noise_seed = true;
+                }
+                else if (strcmp("noise_stdev", args[arg_index]) == 0)
+                {
+                    options.fuzz.noise_stdev = true;
+                }
+                else if (strcmp("end", args[arg_index]) == 0)
+                {
+                    break;
+                }
+                else
+                {
+                    cout << "Unknown fuzz option" << endl;
+                    exit(1);
+                }
+            }
+
+            if (strcmp("end", args[arg_index]) != 0)
+            {
+                usage();
+            }
+        }
+        else if (strcmp("--fuzz_seed", args[arg_index]) == 0)
+        {
+            ++arg_index;
+            char* seed_end;
+            options.fuzz.seed = strtoul(args[arg_index], &seed_end, 10);
+            if (*seed_end)
+            {
+                // Couldn't read the whole number
+                usage();
+            }
+        }
+        else if (strcmp("--fuzz_count", args[arg_index]) == 0)
+        {
+            ++arg_index;
+            char* count_end;
+            options.fuzz.count = strtoul(args[arg_index], &count_end, 10);
+            if (*count_end)
+            {
+                // Couldn't read the whole number
+                usage();
+            }
+        }
+        else
+        {
+            usage();
+        }
 
         ++arg_index;
     }
@@ -74,7 +236,38 @@ CommandLineOptions parse_args(int argc, char** args)
     return options;
 }
 
-void start_gui(RenderState render_state, SimulationState state)
+struct GeomagnetismData
+{
+    MAGtype_MagneticModel* magnetic_models[1];
+    MAGtype_Ellipsoid ellipsoid;
+    MAGtype_Geoid geoid;
+};
+
+void compute_outputs(SimulationState* state, GeomagnetismData geomag)
+{
+    // calculate nadir vector
+    float camera_matrix[9];
+    state->camera.inverse().to_matrix(camera_matrix);
+    state->nadir = Vec3(-camera_matrix[2], -camera_matrix[5], -camera_matrix[8]);
+
+    // Calclate magnetic field
+    MAGtype_CoordSpherical spherical_coord;
+    MAGtype_CoordGeodetic geo_coord;
+    MAGtype_GeoMagneticElements magnetic_field;
+
+    spherical_coord.lambda = state->longitude;
+    spherical_coord.phig = state->latitude;
+    spherical_coord.r = EARTH_RADIUS + state->altitude;
+
+    MAG_SphericalToGeodetic(geomag.ellipsoid, spherical_coord, &geo_coord);
+    MAG_Geomag(geomag.ellipsoid, spherical_coord, geo_coord, geomag.magnetic_models[0], &magnetic_field);
+
+    state->magnetic_field = Vec3(magnetic_field.Y, magnetic_field.X, -magnetic_field.Z);
+    state->magnetic_field = state->camera.apply_rotation(state->magnetic_field);
+    state->magnetometer = (0.001f / MAGNETIC_FIELD_SENSITIVITY) * state->magnetometer_reference_frame.apply_rotation(state->magnetic_field);
+}
+
+void start_gui(RenderState render_state, SimulationState state, FuzzOptions fuzz_options, GeomagnetismData geomag)
 {
     SDL_ShowWindow(render_state.window);
 
@@ -92,25 +285,6 @@ void start_gui(RenderState render_state, SimulationState state)
 
     Keyboard keys;
 
-    MAGtype_MagneticModel* magnetic_models[1];
-    MAGtype_Ellipsoid ellipsoid;
-    MAGtype_Geoid geoid;
-    MAGtype_CoordSpherical spherical_coord;
-    MAGtype_CoordGeodetic geo_coord;
-
-    MAGtype_GeoMagneticElements magnetic_field;
-
-    {
-        char wmm_coeff_filename[] = "WMM_2020/WMM.COF";
-        MAGtype_MagneticModel** magnetic_models_ptr = magnetic_models;
-        if(!MAG_robustReadMagModels(wmm_coeff_filename, &magnetic_models_ptr, 1))
-        {
-            std::cerr << "Magnetic field coefficients file WMM_2020/WMM.COF not found." << std::endl;
-        }
-    }
-
-    MAG_SetDefaults(&ellipsoid, &geoid);
-
     char filename_buf[256] = {};
 
     bool running = true;
@@ -125,61 +299,45 @@ void start_gui(RenderState render_state, SimulationState state)
         // ----------
         bool typing = false;  // Used to silence keyboard control when using a textbox
         {
-            ImGui::Text("Export Test Data");
-            // Hack: -4 in buffer size leaving room for file extension
-            typing |= ImGui::InputText("Filename", filename_buf, sizeof(filename_buf) - 4);
-            if (ImGui::Button("Export"))
+            if (ImGui::TreeNode("Export Test Data"))
             {
-                char* file_extension = filename_buf + strlen(filename_buf);
+                typing |= ImGui::InputText("Filename", filename_buf, sizeof(filename_buf));
+                if (ImGui::Button("Export"))
+                {
+                    export_all(filename_buf, render_state, state);
+                }
 
-                strncpy(file_extension, ".png", 4);
-                file_extension[4] = 0;
-                export_image(filename_buf, render_state, state);
-
-                strncpy(file_extension, ".hrz", 4);
-                state.save_state(filename_buf);
-
-                strncpy(file_extension, ".bin", 4);
-                export_binary(filename_buf, render_state, state);
-
-                file_extension[0] = 0;
-                file_extension[1] = 0;
-                file_extension[2] = 0;
-                file_extension[3] = 0;
+                ImGui::TreePop();
             }
 
-            ImGui::Separator();
-
-            ImGui::Text("Noise");
-
-            ImGui::InputFloat("Noise seed", &state.noise_seed);
-            ImGui::SliderFloat("Noise stdev", &state.noise_stdev, 0.0f, 0.2f, "%.4f", 2);
-            if (ImGui::Button("Regenerate Noise"))
+            if (ImGui::TreeNode("Atmosphere"))
             {
-                generate_noise(state.noise_seed, state.noise_stdev, render_state.noise, CAMERA_H_RES * CAMERA_V_RES);
-                glTextureSubImage2D(render_state.noise_texture, 0, 0, 0, CAMERA_H_RES, CAMERA_V_RES, GL_RED, GL_FLOAT, render_state.noise);
-                state.noise_seed += 1.0f;
+                ImGui::SliderFloat("Visible Height (km)", &state.visible_atmosphere_height, MIN_ATMOSPHERE_HEIGHT, MAX_ATMOSPHERE_HEIGHT);
+
+                ImGui::TreePop();
+            };
+
+            if (ImGui::TreeNode("Noise"))
+            {
+                ImGui::InputFloat("Noise seed", &state.noise_seed);
+                ImGui::SliderFloat("Noise stdev", &state.noise_stdev, MIN_NOISE_STDEV, MAX_NOISE_STDEV, "%.4f", 2);
+                if (ImGui::Button("Regenerate Noise"))
+                {
+                    generate_noise(state.noise_seed, state.noise_stdev, &render_state);
+                    state.noise_seed += 1.0f;
+                }
+
+                ImGui::TreePop();
             }
 
-            ImGui::Separator();
+            if (ImGui::TreeNode("Coordinates"))
+            {
+                ImGui::InputFloat("Altitude", &state.altitude);
+                ImGui::InputFloat("Latitude (deg)", &state.latitude);
+                ImGui::InputFloat("Longitude (deg)", &state.longitude);
 
-            ImGui::Text("Coordinates");
-
-            ImGui::InputFloat("Altitude", &state.altitude);
-            ImGui::InputFloat("Latitude (deg)", &state.latitude);
-            ImGui::InputFloat("Longitude (deg)", &state.longitude);
-
-            spherical_coord.lambda = state.longitude;
-            spherical_coord.phig = state.latitude;
-
-            spherical_coord.r = EARTH_RADIUS + state.altitude;
-
-            MAG_SphericalToGeodetic(ellipsoid, spherical_coord, &geo_coord);
-            MAG_Geomag(ellipsoid, spherical_coord, geo_coord, magnetic_models[0], &magnetic_field);
-
-            state.magnetic_field = Vec3(magnetic_field.Y, magnetic_field.X, -magnetic_field.Z);
-            state.magnetic_field = state.camera.apply_rotation(state.magnetic_field);
-            state.magnetometer = (0.001f / MAGNETIC_FIELD_SENSITIVITY) * state.magnetometer_reference_frame.apply_rotation(state.magnetic_field);
+                ImGui::TreePop();
+            }
         }
 
         if (!typing)
@@ -200,19 +358,40 @@ void start_gui(RenderState render_state, SimulationState state)
 
             state.camera = state.camera * Quaternion::roll(roll) * Quaternion::pitch(pitch) * Quaternion::yaw(yaw);
 
-            ImGui::Separator();
+            if (ImGui::TreeNode("Randomization"))
+            {
+                ImGui::Checkbox("Orientation", &fuzz_options.orientation);
+                ImGui::Checkbox("Magnetometer Orientation", &fuzz_options.magnetometer_orientation);
+                ImGui::Checkbox("Atmosphere Height", &fuzz_options.atmosphere_height);
+                ImGui::Checkbox("Altitude", &fuzz_options.altitude);
+                ImGui::Checkbox("Latitude", &fuzz_options.latitude);
+                ImGui::Checkbox("Longitude", &fuzz_options.longitude);
+                ImGui::Checkbox("Noise Seed", &fuzz_options.noise_seed);
+                ImGui::Checkbox("Noise Stdev", &fuzz_options.noise_stdev);
+                if (ImGui::Button("Randomize"))
+                {
+                    randomize_state(&state, fuzz_options);
+                    generate_noise(state.noise_seed, state.noise_stdev, &render_state);
+                }
 
-            ImGui::Text("Values");
+                ImGui::TreePop();
+            }
 
-            // calculate nadir vector
-            float camera_matrix[9];
-            state.camera.inverse().to_matrix(camera_matrix);
-            state.nadir = Vec3(-camera_matrix[2], -camera_matrix[5], -camera_matrix[8]);
-            ImGui::Text("Nadir: (%f, %f, %f)", state.nadir.x, state.nadir.y, state.nadir.z);
+            if (ImGui::TreeNode("Outputs"))
+            {
+                ImGui::Text("Nadir: (%f, %f, %f)", state.nadir.x, state.nadir.y, state.nadir.z);
 
-            ImGui::Text("Magnetic Field (nGauss): (%.0f, %.0f, %.0f)", state.magnetic_field.x, state.magnetic_field.y, state.magnetic_field.z);
-            ImGui::Text("Magnetometer Reading: (%.0f, %.0f, %.0f)", state.magnetometer.x, state.magnetometer.y, state.magnetometer.z);
+                ImGui::Text("Magnetic Field (nGauss): (%.0f, %.0f, %.0f)", state.magnetic_field.x, state.magnetic_field.y, state.magnetic_field.z);
+                ImGui::Text("Magnetometer Reading: (%.0f, %.0f, %.0f)", state.magnetometer.x, state.magnetometer.y, state.magnetometer.z);
+
+                ImGui::TreePop();
+            }
         }
+
+        // ---------------
+        // Compute Outputs
+        // ---------------
+        compute_outputs(&state, geomag);
 
         // ---------
         // Rendering
@@ -252,18 +431,40 @@ void start_gui(RenderState render_state, SimulationState state)
 int main(int argc, char** args)
 {
     CommandLineOptions options = parse_args(argc, args);
-
-    SimulationState state = options.loaded_state;
+    srand(options.fuzz.seed);
 
     RenderState render_state = render_init(SCREEN_WIDTH_PIXELS, SCREEN_HEIGHT_PIXELS);
 
+
+    // Init geomagnetism library
+    GeomagnetismData geomag;
+    {
+        // Initialize variable for parameter to avoid warning
+        // And get a pointer to the magnetic model array
+        // (This API sucks so much)
+        char wmm_coeff_filename[] = "WMM_2020/WMM.COF";
+        MAGtype_MagneticModel** magnetic_models_ptr = geomag.magnetic_models;
+        if(!MAG_robustReadMagModels(wmm_coeff_filename, &magnetic_models_ptr, 1))
+        {
+            std::cerr << "Magnetic field coefficients file WMM_2020/WMM.COF not found." << std::endl;
+        }
+        MAG_SetDefaults(&geomag.ellipsoid, &geomag.geoid);
+    }
+
+    // If export filename is given then don't run GUI
     if (options.export_filename)
     {
-        export_image(options.export_filename, render_state, state);
+        std::string base_filename(options.export_filename);
+        for (unsigned int i = 0; i < options.fuzz.count; ++i)
+        {
+            randomize_state(&options.loaded_state, options.fuzz);
+            compute_outputs(&options.loaded_state, geomag);
+            export_all(base_filename + std::to_string(i), render_state, options.loaded_state);
+        }
     }
     else
     {
-        start_gui(render_state, state);
+        start_gui(render_state, options.loaded_state, options.fuzz, geomag);
     }
 
     SDL_Quit();

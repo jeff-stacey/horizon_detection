@@ -127,6 +127,9 @@ void render_frame(RenderState render_state, SimulationState state, uint32_t widt
     location = glGetUniformLocation(render_state.screen_shader, "alpha");
     glUniform1f(location, cosf(asinf(EARTH_RADIUS / (EARTH_RADIUS + state.altitude))));
 
+    location = glGetUniformLocation(render_state.screen_shader, "alpha_atmosphere");
+    glUniform1f(location, cosf(asinf((EARTH_RADIUS + state.visible_atmosphere_height) / (EARTH_RADIUS + state.altitude))));
+
     glBindVertexArray(render_state.screen_mesh.vao);
     glDrawArrays(
         GL_TRIANGLES,
@@ -192,14 +195,16 @@ void export_binary(const char* filename, RenderState render_state, SimulationSta
     fclose(fd);
 }
 
-void generate_noise(float seed, float stdev, float* noise, size_t length)
+void generate_noise(float seed, float stdev, RenderState* render_state)
 {
     std::default_random_engine random_engine(seed);
     std::normal_distribution<float> normal_dist(0.0f, stdev);
-    for (size_t i = 0; i < length; ++i)
+    for (size_t i = 0; i < CAMERA_WIDTH * CAMERA_HEIGHT; ++i)
     {
-        noise[i] = normal_dist(random_engine);
+        render_state->noise[i] = normal_dist(random_engine);
     }
+
+    glTextureSubImage2D(render_state->noise_texture, 0, 0, 0, CAMERA_WIDTH, CAMERA_HEIGHT, GL_RED, GL_FLOAT, render_state->noise);
 }
 
 RenderState render_init(unsigned int screen_width, unsigned int screen_height)
@@ -293,9 +298,6 @@ RenderState render_init(unsigned int screen_width, unsigned int screen_height)
         render_state.screen_mesh.size = sizeof(screen_mesh) / sizeof(*screen_mesh);
     }
 
-    render_state.noise = new float[CAMERA_H_RES * CAMERA_V_RES];
-    generate_noise(0.0f, 0.01f, render_state.noise, CAMERA_H_RES * CAMERA_V_RES);
-
     // noise texture
     {
         glGenTextures(1, &render_state.noise_texture);
@@ -306,9 +308,12 @@ RenderState render_init(unsigned int screen_width, unsigned int screen_height)
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST);
         glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 
-        glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, CAMERA_H_RES, CAMERA_V_RES, 0, GL_RED, GL_FLOAT, render_state.noise);
+        glTexImage2D(GL_TEXTURE_2D, 0, GL_RED, CAMERA_WIDTH, CAMERA_HEIGHT, 0, GL_RED, GL_FLOAT, render_state.noise);
         glBindTexture(GL_TEXTURE_2D, 0);
     }
+
+    render_state.noise = new float[CAMERA_WIDTH * CAMERA_HEIGHT];
+    generate_noise(0.0f, 0.01f, &render_state);
 
     render_state.screen_shader = link_program(
         compile_shader("screen_shader.vert", GL_VERTEX_SHADER),
