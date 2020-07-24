@@ -125,30 +125,10 @@ int main() {
         } else if (alg_choice == 1) {
             //chord fitting
             dprintf("Starting chord fit\n");
-            //choose subset of points
-            dprintf("Choosing point subset\n");
-            int num_samples = ceil(num_points/subset_num);
-            printf("%d", num_samples);
-            Vec2D samples[num_samples];
-            int n = 0;
-
-            for(int i=0; i<num_points; i++){
-                if(i%subset_num == 0){
-                    printf("data p: (%f,%f)\n", edge_points[i].x, edge_points[i].y);
-                    samples[n].x = edge_points[i].x;
-                    samples[n].y = edge_points[i].y;
-                    printf("samples: (%f,%f)\n", samples[n].x, samples[n].y);
-                    n++;
-                }
-            }
-
-            printf("points chosen:\n");
-            for(int i=0; i<num_samples; i++){
-                printf("(%f,%f)\n", samples[i].x, samples[i].y);
-            }
             
             dprintf("Fitting curve\n");
-            lineintersect_circle_fit(samples, num_samples, circ_params);
+            int num_samples = ceil(num_points/subset_num);
+            lineintersect_circle_fit(edge_points, num_samples, subset_num, circ_params);
         }
 
         find_nadir(circ_params, nadir);
@@ -160,7 +140,6 @@ int main() {
     //print results
     printf("nadir:\n");
     print3(nadir);
-    printf("AAAA\n");
 
     asm volatile ("end_of_main:");
     return 0;

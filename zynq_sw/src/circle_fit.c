@@ -64,7 +64,7 @@ void permutations2(Vec2D pairs[], int len_pairs, const Vec2D data[], int len_dat
     }
 }
 
-void lineintersect_circle_fit(const Vec2D data[], int len_data, float result[3])
+void lineintersect_circle_fit(const Vec2D data[], int len_data, int sample_num, float result[3])
 {
     //assuming data is subset of the overall data
 
@@ -90,33 +90,32 @@ void lineintersect_circle_fit(const Vec2D data[], int len_data, float result[3])
 
     int n = 0;
     int m = 0;
+
     for(int i = 0; i < len_data; i++){
-        for(int j = 0; j < len_data - n; j++){
-            if(data[i].x != data[j+n].x && data[i].y != data[j+n].y){
+        for(int j = 0; j < len_data - n*sample_num; j++){
+            if(data[i*sample_num].x != data[(j+n)*sample_num].x && data[i*sample_num].y != data[(j+n)*sample_num].y){
                 //pair of points at i and j+1  
                 if(m%2 == 0){
-                    p1.x = data[i].x;
-                    p1.y = data[i].y;
-                    p2.x = data[j+n].x;
-                    p2.y = data[j+n].y;
+                    p1.x = data[i*sample_num].x;
+                    p1.y = data[i*sample_num].y;
+                    p2.x = data[(j+n)*sample_num].x;
+                    p2.y = data[(j+n)*sample_num].y;
 
                     v1.x = p2.x - p1.x;
                     v1.y = p2.y - p1.y;
 
                 }else{
                     //printf("points:\n");
-                    p3.x = data[i].x;
-                    p3.y = data[i].y;
-                    p4.x = data[j+n].x;
-                    p4.y = data[j+n].y;
-                    //printf("(%f,%f) (%f,%f) and\n", p1.x,p1.y,p2.x,p2.y);
-                    //printf("(%f,%f) (%f,%f)\n",p3.x,p3.x,p4.x,p4.y);
+                    p3.x = data[i*sample_num].x;
+                    p3.y = data[i*sample_num].y;
+                    p4.x = data[(j+n)*sample_num].x;
+                    p4.y = data[(j+n)*sample_num].y;
 
                     v2.x = p4.x - p3.x;
                     v2.y = p4.y - p3.y;
 
 
-                    if(!(norm(&v1) < 1 || norm(&v2) < 1)){
+                    if(!(norm(&v1) < 3 || norm(&v2) < 3)){
                         //skip these points if theyre too close together
                     	//mid point between p1 and p2
                         m1.x = 0.5*v1.x + p1.x;
@@ -162,6 +161,7 @@ void lineintersect_circle_fit(const Vec2D data[], int len_data, float result[3])
         }
         n++;
     }
+
 
     printf("avg_n: %d\n", avg_n);
     intersect.x /= avg_n;

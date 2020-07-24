@@ -29,7 +29,7 @@ unsigned int nCr(unsigned int n, unsigned int r);
 
 void permutations2(Vec2D pairs[], int len_pairs, const Vec2D data[], int len_data);
 
-void lineintersect_circle_fit(const Vec2D data[], int len_data, float result[3]);
+void lineintersect_circle_fit(const Vec2D data[], int len_data, int sample_num, float result[3]);
 
 void LScircle_fit(Vec2D data[], int len_data, float result[3]);
 
