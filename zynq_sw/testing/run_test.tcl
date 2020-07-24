@@ -1,25 +1,10 @@
 #!xsct
 
+package require cmdline
+
 ##############
 # Procedures #
 ##############
-
-proc argv_has_flag { name } {
-    global argv
-    set idx [lsearch -exact $argv $name]
-
-    if {$idx >= 0} {
-        set argv_new {}
-        foreach item $argv {
-            if {$item ni $name} {
-                lappend argv_new $item
-            }
-        }
-        set argv $argv_new
-        return 1
-    }
-    return 0
-}
 
 # reads a variable from memory by name
 proc vread { name } {
@@ -33,17 +18,23 @@ proc imread { var_name file_name } {
     mrd -bin -file $file_name [expr 160*120]
 }
 
-############################
-# Parse Command-line Flags #
-############################
+######################
+# Parse Command-line #
+######################
 
-set build_app [argv_has_flag "--build"]
-set use_hardware [argv_has_flag "--hw"]
-set test_whole_dir [argv_has_flag "--dir"]
+set parameters {
+    { build     "Build the BSP and application before testing"}
+    { hw        "Run the test on a connected Zynq MPSoC" }
+    { tdir      "Test on every available image in the specified directory" }
+    { alg.arg 0 "Select which algorithm to use: 0 - edge detection and least-squares, 1 - edge detection and chord fit, 2 - vsearch" }
+}
+
+# this parses the specified parameters into an array and leaves any other arguments
+array set args [cmdline::getoptions argv $parameters]
 
 # detemine what test data we want to use 
 # because of the way i'm parsing arguments, this has to happen after parsing all other flags
-if { $test_whole_dir } {
+if { $args(tdir) } {
     set testfiles [glob [lindex $argv 0]/*.bin]
 } else {
     set testfiles [lindex $argv 0]
@@ -72,7 +63,7 @@ if [file exist ../workspace] {
 
 
 # maybe build the application
-if { $build_app } {
+if { $args(build) } {
     puts "Building application - pay attention! I can't tell if the build fails."
     app build -name $app_name
 }
@@ -81,7 +72,7 @@ if { $build_app } {
 # Connect to either hardware or QEMU #
 ######################################
 
-if { $use_hardware } {
+if { $args(hw) } {
     puts "Connecting to hardware"
     # get vitis install directory
     set vitis_path [join [lrange [split [exec which xsct] /] 0 end-2] /]
@@ -144,7 +135,7 @@ foreach testfile $testfiles {
     # 0 for edge detection and least-squares curve fit
     # 1 for edge detection and chord curve fit
     # 2 for vsearch (not implemented in C yet)
-    print -set alg_choice 0
+    print -set alg_choice $args(alg)
 
     puts "\tRunning program"
     #start running at the start of main
