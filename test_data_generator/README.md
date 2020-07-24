@@ -12,7 +12,7 @@ If you don't want to install anything, this stackoverflow answer should help: ht
 
 There are several command line options. They can be applied in any combination, but not every combination is useful.
  - `--load <filename>` loads a `.hrz` file. `.hrz` files are output by the test data generator and store the combination of parameters and outputs associated with an image.
- - `--export <filename>` exports a `.hrz` file without starting GUI.
+ - `--export <filename>` exports an image without starting GUI. It can be combined with `--load`, and the image is generated from the loaded parameters. Creates the files `<filename>.png`, `<filename>.bin` and `<filename>.hrz`. The `<filename>.hrz` is a different file from the `--load` input, and it contains outputs generated from the inputs (e.g. nadir vector, magnetometer values). 
  - `--fuzz_options <fuzz options> end` selects which parameters to randomize. The list of fuzz options needs to terminate with `end`. Fuzz options are
      - `orientation`
      - `magnetometer_orientation`
