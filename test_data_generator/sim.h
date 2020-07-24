@@ -25,6 +25,6 @@ struct SimulationState
     Vec3 magnetometer;   // in rotated reference frame
 
     bool load_state(const char* filename);
-    void save_state(char* filename);
+    void save_state(const char* filename);
 };
 #pragma pack(pop)

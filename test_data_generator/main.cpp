@@ -38,12 +38,24 @@ struct FuzzOptions
     bool noise_seed = false;
     bool noise_stdev = false;
 
-    int seed = 1;
+    unsigned int seed = 1;
+    unsigned int count = 1;
 };
 
 float random_float()
 {
     return (float)rand() / (float)RAND_MAX;
+}
+
+void export_all(std::string filename, RenderState render_state, SimulationState sim_state)
+{
+    std::string png_filename = filename + std::string(".png");
+    std::string bin_filename = filename + std::string(".bin");
+    std::string hrz_filename = filename + std::string(".hrz");
+
+    export_image(png_filename.c_str(), render_state, sim_state);
+    export_binary(bin_filename.c_str(), render_state, sim_state);
+    sim_state.save_state(hrz_filename.c_str());
 }
 
 void randomize_state(SimulationState* state, FuzzOptions fuzz)
@@ -137,7 +149,7 @@ CommandLineOptions parse_args(int argc, char** args)
             }
             options.export_filename = args[arg_index];
         }
-        else if (strcmp("--fuzz", args[arg_index]) == 0)
+        else if (strcmp("--fuzz_options", args[arg_index]) == 0)
         {
             while (arg_index < argc)
             {
@@ -191,6 +203,32 @@ CommandLineOptions parse_args(int argc, char** args)
                 usage();
             }
         }
+        else if (strcmp("--fuzz_seed", args[arg_index]) == 0)
+        {
+            ++arg_index;
+            char* seed_end;
+            options.fuzz.seed = strtoul(args[arg_index], &seed_end, 10);
+            if (*seed_end)
+            {
+                // Couldn't read the whole number
+                usage();
+            }
+        }
+        else if (strcmp("--fuzz_count", args[arg_index]) == 0)
+        {
+            ++arg_index;
+            char* count_end;
+            options.fuzz.count = strtoul(args[arg_index], &count_end, 10);
+            if (*count_end)
+            {
+                // Couldn't read the whole number
+                usage();
+            }
+        }
+        else
+        {
+            usage();
+        }
 
         ++arg_index;
     }
@@ -198,7 +236,38 @@ CommandLineOptions parse_args(int argc, char** args)
     return options;
 }
 
-void start_gui(RenderState render_state, SimulationState state, FuzzOptions fuzz_options)
+struct GeomagnetismData
+{
+    MAGtype_MagneticModel* magnetic_models[1];
+    MAGtype_Ellipsoid ellipsoid;
+    MAGtype_Geoid geoid;
+};
+
+void compute_outputs(SimulationState* state, GeomagnetismData geomag)
+{
+    // calculate nadir vector
+    float camera_matrix[9];
+    state->camera.inverse().to_matrix(camera_matrix);
+    state->nadir = Vec3(-camera_matrix[2], -camera_matrix[5], -camera_matrix[8]);
+
+    // Calclate magnetic field
+    MAGtype_CoordSpherical spherical_coord;
+    MAGtype_CoordGeodetic geo_coord;
+    MAGtype_GeoMagneticElements magnetic_field;
+
+    spherical_coord.lambda = state->longitude;
+    spherical_coord.phig = state->latitude;
+    spherical_coord.r = EARTH_RADIUS + state->altitude;
+
+    MAG_SphericalToGeodetic(geomag.ellipsoid, spherical_coord, &geo_coord);
+    MAG_Geomag(geomag.ellipsoid, spherical_coord, geo_coord, geomag.magnetic_models[0], &magnetic_field);
+
+    state->magnetic_field = Vec3(magnetic_field.Y, magnetic_field.X, -magnetic_field.Z);
+    state->magnetic_field = state->camera.apply_rotation(state->magnetic_field);
+    state->magnetometer = (0.001f / MAGNETIC_FIELD_SENSITIVITY) * state->magnetometer_reference_frame.apply_rotation(state->magnetic_field);
+}
+
+void start_gui(RenderState render_state, SimulationState state, FuzzOptions fuzz_options, GeomagnetismData geomag)
 {
     SDL_ShowWindow(render_state.window);
 
@@ -216,25 +285,6 @@ void start_gui(RenderState render_state, SimulationState state, FuzzOptions fuzz
 
     Keyboard keys;
 
-    MAGtype_MagneticModel* magnetic_models[1];
-    MAGtype_Ellipsoid ellipsoid;
-    MAGtype_Geoid geoid;
-    MAGtype_CoordSpherical spherical_coord;
-    MAGtype_CoordGeodetic geo_coord;
-
-    MAGtype_GeoMagneticElements magnetic_field;
-
-    {
-        char wmm_coeff_filename[] = "WMM_2020/WMM.COF";
-        MAGtype_MagneticModel** magnetic_models_ptr = magnetic_models;
-        if(!MAG_robustReadMagModels(wmm_coeff_filename, &magnetic_models_ptr, 1))
-        {
-            std::cerr << "Magnetic field coefficients file WMM_2020/WMM.COF not found." << std::endl;
-        }
-    }
-
-    MAG_SetDefaults(&ellipsoid, &geoid);
-
     char filename_buf[256] = {};
 
     bool running = true;
@@ -251,26 +301,10 @@ void start_gui(RenderState render_state, SimulationState state, FuzzOptions fuzz
         {
             if (ImGui::TreeNode("Export Test Data"))
             {
-                // Hack: -4 in buffer size leaving room for file extension
-                typing |= ImGui::InputText("Filename", filename_buf, sizeof(filename_buf) - 4);
+                typing |= ImGui::InputText("Filename", filename_buf, sizeof(filename_buf));
                 if (ImGui::Button("Export"))
                 {
-                    char* file_extension = filename_buf + strlen(filename_buf);
-
-                    strncpy(file_extension, ".png", 4);
-                    file_extension[4] = 0;
-                    export_image(filename_buf, render_state, state);
-
-                    strncpy(file_extension, ".hrz", 4);
-                    state.save_state(filename_buf);
-
-                    strncpy(file_extension, ".bin", 4);
-                    export_binary(filename_buf, render_state, state);
-
-                    file_extension[0] = 0;
-                    file_extension[1] = 0;
-                    file_extension[2] = 0;
-                    file_extension[3] = 0;
+                    export_all(filename_buf, render_state, state);
                 }
 
                 ImGui::TreePop();
@@ -357,25 +391,7 @@ void start_gui(RenderState render_state, SimulationState state, FuzzOptions fuzz
         // ---------------
         // Compute Outputs
         // ---------------
-        {
-            // calculate nadir vector
-            float camera_matrix[9];
-            state.camera.inverse().to_matrix(camera_matrix);
-            state.nadir = Vec3(-camera_matrix[2], -camera_matrix[5], -camera_matrix[8]);
-
-            // Calclate magnetic field
-            spherical_coord.lambda = state.longitude;
-            spherical_coord.phig = state.latitude;
-
-            spherical_coord.r = EARTH_RADIUS + state.altitude;
-
-            MAG_SphericalToGeodetic(ellipsoid, spherical_coord, &geo_coord);
-            MAG_Geomag(ellipsoid, spherical_coord, geo_coord, magnetic_models[0], &magnetic_field);
-
-            state.magnetic_field = Vec3(magnetic_field.Y, magnetic_field.X, -magnetic_field.Z);
-            state.magnetic_field = state.camera.apply_rotation(state.magnetic_field);
-            state.magnetometer = (0.001f / MAGNETIC_FIELD_SENSITIVITY) * state.magnetometer_reference_frame.apply_rotation(state.magnetic_field);
-        }
+        compute_outputs(&state, geomag);
 
         // ---------
         // Rendering
@@ -415,16 +431,40 @@ void start_gui(RenderState render_state, SimulationState state, FuzzOptions fuzz
 int main(int argc, char** args)
 {
     CommandLineOptions options = parse_args(argc, args);
+    srand(options.fuzz.seed);
 
     RenderState render_state = render_init(SCREEN_WIDTH_PIXELS, SCREEN_HEIGHT_PIXELS);
 
+
+    // Init geomagnetism library
+    GeomagnetismData geomag;
+    {
+        // Initialize variable for parameter to avoid warning
+        // And get a pointer to the magnetic model array
+        // (This API sucks so much)
+        char wmm_coeff_filename[] = "WMM_2020/WMM.COF";
+        MAGtype_MagneticModel** magnetic_models_ptr = geomag.magnetic_models;
+        if(!MAG_robustReadMagModels(wmm_coeff_filename, &magnetic_models_ptr, 1))
+        {
+            std::cerr << "Magnetic field coefficients file WMM_2020/WMM.COF not found." << std::endl;
+        }
+        MAG_SetDefaults(&geomag.ellipsoid, &geomag.geoid);
+    }
+
+    // If export filename is given then don't run GUI
     if (options.export_filename)
     {
-        export_image(options.export_filename, render_state, options.loaded_state);
+        std::string base_filename(options.export_filename);
+        for (unsigned int i = 0; i < options.fuzz.count; ++i)
+        {
+            randomize_state(&options.loaded_state, options.fuzz);
+            compute_outputs(&options.loaded_state, geomag);
+            export_all(base_filename + std::to_string(i), render_state, options.loaded_state);
+        }
     }
     else
     {
-        start_gui(render_state, options.loaded_state, options.fuzz);
+        start_gui(render_state, options.loaded_state, options.fuzz, geomag);
     }
 
     SDL_Quit();

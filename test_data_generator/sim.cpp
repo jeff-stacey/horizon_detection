@@ -18,7 +18,7 @@ bool SimulationState::load_state(const char* filename)
     return true;
 }
 
-void SimulationState::save_state(char* filename)
+void SimulationState::save_state(const char* filename)
 {
     std::ofstream save_file(filename, std::ios::trunc | std::ios::binary);
     save_file.write((const char*)this, sizeof(*this));
