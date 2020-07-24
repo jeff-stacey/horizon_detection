@@ -262,7 +262,7 @@ void imgHypot (pixel X[R_DIM][C_DIM], pixel Y[R_DIM][C_DIM], pixel C[R_DIM][C_DI
 
     for (i=2; i < R_DIM-2 ; i++) {
         for (j=2; j < C_DIM-2 ; j++) {
-            result =  hypot((float)X[i][j], (float)Y[i][j]);
+            result =  hypotf((float)X[i][j], (float)Y[i][j]);
             C[i][j] = (pixel)result;
             
         };
@@ -283,7 +283,7 @@ void imgTheta (pixel X[R_DIM][C_DIM], pixel Y[R_DIM][C_DIM], float C[R_DIM][C_DI
 
     for (i=2; i < R_DIM-2 ; i++) {
         for (j=2; j < C_DIM-2 ; j++) {
-            result =  atan2((float)Y[i][j], (float)X[i][j]);
+            result =  atan2f((float)Y[i][j], (float)X[i][j]);
             C[i][j] = result;       
         };
     };
