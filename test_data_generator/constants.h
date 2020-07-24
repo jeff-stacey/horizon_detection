@@ -46,3 +46,18 @@
 #define HORIZONTAL_FOV 57.0 * M_PI / 180.0
 
 #define MAGNETIC_FIELD_SENSITIVITY 0.14
+
+/**********
+ * Bounds *
+ **********/
+
+// These are upper and lower bounds for user-adjustable parameters
+
+#define MAX_ALTITUDE 600.0
+#define MIN_ALTITUDE 400.0
+
+#define MAX_NOISE_STDEV 0.2
+#define MIN_NOISE_STDEV 0.0
+
+#define MAX_ATMOSPHERE_HEIGHT 100.0
+#define MIN_ATMOSPHERE_HEIGHT 0.0
