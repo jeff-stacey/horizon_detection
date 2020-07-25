@@ -92,6 +92,7 @@ void lineintersect_circle_fit(const Vec2D data[], int len_data, int sample_num, 
     int m = 0;
 
     for(int i = 0; i < len_data; i++){
+        n = 0;
         for(int j = 0; j < len_data - n*sample_num; j++){
             if(data[i*sample_num].x != data[(j+n)*sample_num].x && data[i*sample_num].y != data[(j+n)*sample_num].y){
                 //pair of points at i and j+1  
@@ -106,18 +107,24 @@ void lineintersect_circle_fit(const Vec2D data[], int len_data, int sample_num, 
 
                 }else{
                     //printf("points:\n");
-                    p3.x = data[i*sample_num].x;
-                    p3.y = data[i*sample_num].y;
+                    p3.x = data[(i+1)*sample_num%(sample_num*len_data)].x;
+                    p3.y = data[(i+1)*sample_num%(sample_num*len_data)].y;
                     p4.x = data[(j+n)*sample_num].x;
                     p4.y = data[(j+n)*sample_num].y;
 
                     v2.x = p4.x - p3.x;
                     v2.y = p4.y - p3.y;
 
+                    //printf("\n");
+                    //printf("points used:\n");
+                    //printf("(%f, %f) (%f, %f) and\n", p1.x, p1.y, p2.x, p2.y);
+                    //printf("(%f, %f) (%f, %f)\n", p3.x, p3.y, p4.x, p4.y);
 
-                    if(!(norm(&v1) < 3 || norm(&v2) < 3)){
+
+                    if(!(norm(&v1) < 10 || norm(&v2) < 10)){
                         //skip these points if theyre too close together
                     	//mid point between p1 and p2
+
                         m1.x = 0.5*v1.x + p1.x;
                         m1.y = 0.5*v1.y + p1.y;
                         vnorm = norm(&v1);
@@ -147,6 +154,8 @@ void lineintersect_circle_fit(const Vec2D data[], int len_data, int sample_num, 
                             //just skip this step
                         }else
                         {
+                            //printf("found intersection at:\n");
+                            //printf("(%f, %f) \n", intersect_temp.x, intersect_temp.y);
                             intersect.x += intersect_temp.x;
                             intersect.y += intersect_temp.y;
 

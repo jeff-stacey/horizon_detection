@@ -27,7 +27,7 @@ SOFTWARE.
 
 float norm(Vec2D* V)
 {
-    return sqrt(pow(V->x,2) + pow(V->y,2));
+    return sqrtf(V->x * V->x + V->y * V->y);
 }
 
 float det2(float A[2][2])
