@@ -49,22 +49,17 @@ Get the Xilinx tools into scope by running
 
 `source <Xilinx install directory>/Vitis/2019.2/settings64.sh`
 
-Set up the workspace using:
+Set up the workspace using
 
 `xsct vitis_config/project_init.tcl`
 
+or, if you're using bash,
+
+`./setup.sh`
+
 ## Build and emulate
 
-Once that's done, open Vitis (it should show up as a regular desktop app) and choose the `workspace` directory we just created as the workspace.
-
-Close the welcome screen by clicking the little x on the tab.
-
-In the Explorer window on the left, open Horizon Detection System > Horizon Detection > src > hello.c. 
-
-Click the hammer symbol in the top bar to build the project and all of the libraries.
-
-Click the dropdown arrow next to the bug symbol and hit Debug Configurations.
-
-Double-click Single Application Debug, check the Emulation box, and click Debug at the bottom left. It'll take a couple seconds, but this should open a debug view and start up QEMU. If it takes a long time to start and you get a bunch of errors in the Emulation Console on the bottom left, you might need to install `netstat`.
-
-If you click the continue button (the green triangle), it should print "Hello World" in the emulation console.
+If you make any changes to the files in `src`, you can run `make all` in
+`workspace/horizon_detection/Debug` to rebuild the application. If you add or
+remove any files, you should remove the workspace directory and set it up
+again. To run tests, follow the instructions in the README in `testing`.

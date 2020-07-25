@@ -111,7 +111,7 @@ int main() {
         dprintf("\tEdge Tracking complete\n\r");
         //printRowSum(suppressed);
 
-        // Current Method of storing Edge_Points (could speed up with malloc?) 
+        // Current Method of storing Edge_Points
         num_points = edge2Arr(suppressed,edge_points);
         dprintf("\tEdges Stored in \"edge_points\" array\n\r");
         edgePrint(edge_points,num_points);
@@ -124,7 +124,7 @@ int main() {
             LScircle_fit(edge_points, num_points, circ_params);
         } else if (alg_choice == 1) {
             //chord fitting
-            dprintf("Starting chord fit\n");
+            dprintf("Starting Chord fit\n");
             
             dprintf("Fitting curve\n");
             int num_samples = ceil(num_points/subset_num);

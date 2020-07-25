@@ -18,6 +18,14 @@ proc imread { var_name file_name } {
     mrd -bin -file $file_name [expr 160*120]
 }
 
+proc isnan { x } {
+    if { ![string is double $x] || $x != $x} {
+        return 1
+    } else {
+        return 0
+    }
+}
+
 ######################
 # Parse Command-line #
 ######################
@@ -27,17 +35,25 @@ set parameters {
     { hw        "Run the test on a connected Zynq MPSoC" }
     { tdir      "Test on every available image in the specified directory" }
     { alg.arg 0 "Select which algorithm to use: 0 - edge detection and least-squares, 1 - edge detection and chord fit, 2 - vsearch" }
+    { csv.arg "" "Write results to CSV file of specified name"}
 }
 
+set usage "usage: xsct run_test.tcl \[-build\] \[-hw\] \[-alg \{0 | 1 | 2\}\] \{-tdir test_dir | bin_file\}"
+
 # this parses the specified parameters into an array and leaves any other arguments
-array set args [cmdline::getoptions argv $parameters]
+array set args [cmdline::getoptions argv $parameters $usage]
+
+if { $args(csv) eq ""} {
+    error "Please provide a CSV filename!"
+}
 
 # detemine what test data we want to use 
 # because of the way i'm parsing arguments, this has to happen after parsing all other flags
+set tf [lindex $argv 0]
 if { $args(tdir) } {
-    set testfiles [glob [lindex $argv 0]/*.bin]
+    set testfiles [glob $tf/*.bin]
 } else {
-    set testfiles [lindex $argv 0]
+    set testfiles $tf
 }
 
 ##########################
@@ -50,6 +66,13 @@ set build_dir "../workspace/$app_name/Debug"
 set hw_dir "../workspace/zcu104/hw"
 
 set testing_dir [pwd]
+
+# open a .csv file for results
+
+set csvf [open $args(csv) w]
+
+# write heading line to the csv
+    puts $csvf "testfile,alg_choice,err_angle,num_points,noise_stdev,visible_atmosphere_height,qwmes,qxmes,qymes,qzmes,nxmes,nymes,nzmes,qwref,qxref,qyref,qzref,mquatw,mquatx,mquaty,mquatz,altitude,latitude,longitude,noise_seed,nxref,nyref,nzref,magx,magy,magz,magreadingx,magreadingy,magreadingz"
 
 # set the workspace
 if [file exist ../workspace] {
@@ -147,9 +170,18 @@ foreach testfile $testfiles {
     set alg_choice [vread alg_choice]
 
     # grab the nadir vector
-    set nadir_x [vread nadir[0]]
-    set nadir_y [vread nadir[1]]
-    set nadir_z [vread nadir[2]]
+    set nxmes [vread nadir[0]]
+    set nymes [vread nadir[1]]
+    set nzmes [vread nadir[2]]
+
+    # grab the quaternion (NOT IMPLEMENTED)
+    set qwmes 0
+    set qxmes 0
+    set qymes 0
+    set qzmes 0
+
+    # grab the number of points the edge detection found
+    set num_points [vread num_points]
 
     # open the image parameter file and load the data
     set hrz_filename [concat [lindex [split $testfile .] 0].hrz]
@@ -158,7 +190,7 @@ foreach testfile $testfiles {
     close $hrz_file
 
     # extract values from the file
-    binary scan $hrz fffffffffffffffffffffff qw qx qy qz mquatw mquatx mquaty mquatz altitude latitude longitude noise_seed noise_stdev visible_atmosphere_height nx ny nz magx magy magz magreadingx magreadingy magreadingz
+    binary scan $hrz fffffffffffffffffffffff qwref qxref qyref qzref mquatw mquatx mquaty mquatz altitude latitude longitude noise_seed noise_stdev visible_atmosphere_height nxref nyref nzref magx magy magz magreadingx magreadingy magreadingz
 
     # compare values and print results
     if {$alg_choice == 0} {
@@ -167,13 +199,45 @@ foreach testfile $testfiles {
         puts "\tUsed edge detection and chord fit"
     }
 
+    puts "\tEdge Detection found $num_points points"
+
     puts "\tNadir Vector:"
     puts "\t   Baseline    Detected    "
-    puts [format "\tx: %.10f  %.10f" $nx $nadir_x]
-    puts [format "\ty: %.10f  %.10f" $ny $nadir_y]
-    puts [format "\tz: %.10f  %.10f" $nz $nadir_z]
 
-    set pi [expr acos(-1.0)]
-    set err_angle [expr 180 / $pi * acos($nx * $nadir_x + $ny * $nadir_y + $nz * $nadir_z)]
-    puts [format "\tDetected nadir vector is off by %.4f degrees" $err_angle]
+    set nancount 0
+
+    if { [isnan $nxmes] } {
+        # nans don't equal each other
+        puts [format "\tx: %.10f  nan" $nxref]
+        incr nancount
+    } else {
+        puts [format "\ty: %.10f  %.10f" $nxref $nxmes]
+    }
+    if { [isnan $nymes] } {
+        # nans don't equal each other
+        puts [format "\tx: %.10f  nan" $nyref]
+        incr nancount
+    } else {
+        puts [format "\ty: %.10f  %.10f" $nyref $nymes]
+    }
+    if { [isnan $nzmes] } {
+        # nans don't equal each other
+        puts [format "\tx: %.10f  nan" $nzref]
+        incr nancount
+    } else {
+        puts [format "\ty: %.10f  %.10f" $nzref $nzmes]
+    }
+
+    if { $nancount == 0 } {
+        set pi [expr acos(-1.0)]
+        set err_angle [expr 180 / $pi * acos($nxref * $nxmes + $nyref * $nymes + $nzref * $nzmes)]
+        puts [format "\tDetected nadir vector is off by %.4f degrees" $err_angle]
+    } else {
+        set err_angle NaN
+    }
+
+    # write results to CSV file
+    puts $csvf "$testfile,$alg_choice,$err_angle,$num_points,$noise_stdev,$visible_atmosphere_height,$qwmes,$qxmes,$qymes,$qzmes,$nxmes,$nymes,$nzmes,$qwref,$qxref,$qyref,$qzref,$mquatw,$mquatx,$mquaty,$mquatz,$altitude,$latitude,$longitude,$noise_seed,$nxref,$nyref,$nzref,$magx,$magy,$magz,$magreadingx,$magreadingy,$magreadingz"
 }
+
+close $csvf

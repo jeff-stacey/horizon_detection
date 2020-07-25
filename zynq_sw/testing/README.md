@@ -23,7 +23,7 @@ To quit QEMU when you're done testing, go into the terminal where it's running a
 `<Ctrl-a x>`.
 
 Alternatively, to run the test on actual hardware connected over USB, pass
-`--hw` to this script. If you're using Linux, you can read terminal output from
+`-hw` to this script. If you're using Linux, you can read terminal output from
 the hardware by running `./read_uart.sh`.
 
 To run your code on the image stored in `TestImg` as declared in `main.c`, use
@@ -33,13 +33,15 @@ xsct run_test.tcl test_data/<image_file>.bin
 
 To run your code on all image files found in a directory, say `img_dir`, use
 ```
-xsct run_test.tcl --dir img_dir
+xsct run_test.tcl -tdir img_dir
 ```
+
+To output test results to a CSV file, use the flag `-csv <filename>`. 
 
 The output from any print statements will appear in the QEMU console. This test
 script by default does not build the application before running. You should
-pass `--build` when you call this script or run `make all` in
-`workspace/horizon_detection/Debug/` to build.
+pass `-build` when you call this script or run `make all` in
+`../workspace/horizon_detection/Debug/` to build.
 
 ## Recurring Problems
 
