@@ -7,6 +7,7 @@
 #pragma pack(push, 1)
 struct SimulationState
 {
+    // Inputs
     Quaternion camera = DEFAULT_ORIENTATION;
     Quaternion magnetometer_reference_frame = DEFAULT_MAGNETOMETER_REFERENCE_FRAME;
 
@@ -23,6 +24,11 @@ struct SimulationState
     Vec3 nadir;
     Vec3 magnetic_field; // nGauss, in camera reference frame
     Vec3 magnetometer;   // in rotated reference frame
+
+    // This is generated from the magnetometer_reference_frame quaternion
+    // This could be an input, but the test data generator already takes
+    // a quaternion as input and I don't want to break the format.
+    float magnetometer_transformation[16];
 
     bool load_state(const char* filename);
     void save_state(const char* filename);

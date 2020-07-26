@@ -265,6 +265,25 @@ void compute_outputs(SimulationState* state, GeomagnetismData geomag)
     state->magnetic_field = Vec3(magnetic_field.Y, magnetic_field.X, -magnetic_field.Z);
     state->magnetic_field = state->camera.apply_rotation(state->magnetic_field);
     state->magnetometer = (0.001f / MAGNETIC_FIELD_SENSITIVITY) * state->magnetometer_reference_frame.apply_rotation(state->magnetic_field);
+
+    // Convert the 3x3 rotation matrix obtained from the quaternion into a 4x4 affine transformation matrix
+    // (with zero translation).
+    // All the copying has to be done in reverse order so nothing gets overwritten
+    state->magnetometer_reference_frame.to_matrix(state->magnetometer_transformation);
+    state->magnetometer_transformation[15] = 1.0f;
+    state->magnetometer_transformation[14] = 0.0f;
+    state->magnetometer_transformation[13] = 0.0f;
+    state->magnetometer_transformation[12] = 0.0f;
+    state->magnetometer_transformation[11] = 0.0f;
+    state->magnetometer_transformation[10] = state->magnetometer_transformation[8];
+    state->magnetometer_transformation[9] = state->magnetometer_transformation[7];
+    state->magnetometer_transformation[8] = state->magnetometer_transformation[6];
+    state->magnetometer_transformation[7] = 0.0f;
+    state->magnetometer_transformation[6] = state->magnetometer_transformation[5];
+    state->magnetometer_transformation[5] = state->magnetometer_transformation[4];
+    state->magnetometer_transformation[4] = state->magnetometer_transformation[3];
+    state->magnetometer_transformation[3] = 0.0f;
+    // Rest of the values don't need to be moved
 }
 
 void start_gui(RenderState render_state, SimulationState state, FuzzOptions fuzz_options, GeomagnetismData geomag)
