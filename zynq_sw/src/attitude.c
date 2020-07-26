@@ -133,7 +133,6 @@ float find_yaw_quat(const float mag[3], const Quaternion* R, const Quaternion* T
 
 	return theta_y;
 
-#else
     
     float nadir[3] = {-R[0][2], -R[1][2], -R[2][2]};
     
@@ -209,8 +208,6 @@ void find_nadir(const float results[3], float nadir[3])
         //roll_quat.z *= -1.0f;
 
         Quaternion overall_transformation = quaternion_multiply(&roll_quat, &pitch_quat);
-
-        find_yaw_quat(
 
         nadir[0] = 0.0f;
         nadir[1] = 0.0f;
