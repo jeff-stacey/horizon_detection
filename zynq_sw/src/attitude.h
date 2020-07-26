@@ -23,11 +23,13 @@ SOFTWARE.
 #ifndef ATTITUDE_HEADER
 #define ATTITUDE_HEADER
 
-float find_roll(const float result[3]);
+#include "linalg.h"
 
-float find_pitch(const float results[3]);
+void find_roll_quat(const float circle_params[3], Quaternion* result);
 
-float find_yaw(const float mag[3], const float T[3][3], const float th_x, const float th_z);
+void find_pitch_quat(const float circle_params[3], Quaternion* result);
+
+float find_yaw_quat(const float mag[3], const Quaternion* R, const Quaternion* T);
 
 void find_nadir(const float results[3], float nadir[3]);
 

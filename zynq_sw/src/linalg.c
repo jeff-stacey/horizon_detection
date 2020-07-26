@@ -77,6 +77,38 @@ void multiply33by31(const float A[3][3], const float v[3], float u[3])
 
 }
 
+Quaternion quaternion_multiply(const Quaternion* lhs, const Quaternion* rhs)
+{
+    Quaternion result;
+    result.w = lhs->w*rhs->w - lhs->x*rhs->x - lhs->y*rhs->y - lhs->z*rhs->z;
+    result.x = lhs->w*rhs->x + lhs->x*rhs->w + lhs->y*rhs->z - lhs->z*rhs->y;
+    result.y = lhs->w*rhs->y - lhs->x*rhs->z + lhs->y*rhs->w + lhs->z*rhs->x;
+    result.z = lhs->w*rhs->z + lhs->x*rhs->y - lhs->y*rhs->x + lhs->z*rhs->w;
+
+    return result;
+}
+
+void quaternion_rotate(const Quaternion* rot, float v[3])
+{
+    Quaternion result_quat;
+    result_quat.w = 0.0f;
+    result_quat.x = v[0];
+    result_quat.y = v[1];
+    result_quat.z = v[2];
+
+    Quaternion rot_inverse = *rot;
+    rot_inverse.x *= -1.0f;
+    rot_inverse.y *= -1.0f;
+    rot_inverse.z *= -1.0f;
+
+    result_quat = quaternion_multiply(rot, &result_quat);
+    result_quat = quaternion_multiply(&result_quat, &rot_inverse);
+
+    v[0] = result_quat.x;
+    v[1] = result_quat.y;
+    v[2] = result_quat.z;
+}
+
 void print33(const float A[3][3])
 {
     for(int i=0; i<3; i++){

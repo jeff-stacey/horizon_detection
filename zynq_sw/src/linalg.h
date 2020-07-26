@@ -31,6 +31,17 @@ typedef struct
 
 } Vec2D;
 
+typedef struct
+{
+    float w;
+    float x;
+    float y;
+    float z;
+} Quaternion;
+
+Quaternion quaternion_multiply(const Quaternion* lhs, const Quaternion* rhs);
+void quaternion_rotate(const Quaternion* rot, float v[3]);
+
 float norm(Vec2D* V);
 
 float det2(float A[2][2]);

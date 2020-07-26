@@ -30,56 +30,53 @@ SOFTWARE.
 #define ALTITUDE 500 // TODO: we should pass this as a parameter
 #define FOV 0.994838
 
-float find_roll(const float result[3])
+void find_roll_quat(const float circle_params[3], Quaternion* result)
 {
 	//result is an array containing circle parameters (x_0,y_0,r)
 	//find roll (theta_z)
 
 	//vector v1 from circle centre to image centre
-	//vertical unit vector v2
 	Vec2D v1;
-	Vec2D v2;
 
-	v1.x = 0 - result[0];
-	v1.y = 0 - result[1];
+	v1.x = -circle_params[0];
+	v1.y = -circle_params[1];
 	float v1norm = norm(&v1);
 	v1.x = v1.x/v1norm;
 	v1.y = v1.y/v1norm;
 
-	v2.x = 0;
-	v2.y = 1;
+        // TODO: We can use a half angle formula here to avoid acosf
+        float theta = acosf(v1.y);
 
-	//find angle between v1 and v2
-	float theta_z = acos(v1.x*v2.x + v1.y*v2.y);
+        if (v1.x > 0.0f)
+        {
+            theta *= -1;
+        }
 
-	//determine the sign of the angle
-	float A[2][2] = {{v1.x, v2.x}, {v1.y, v2.y}};
-
-	if(det2(A) < 0){
-		theta_z = -1*theta_z;
-	}
-
-	return theta_z;
+        result->w = cosf(0.5f * theta);
+        result->x = 0.0f;
+        result->y = 0.0f;
+        result->z = sinf(0.5f * theta);
 }
 
-float find_pitch(const float results[3])
+void find_pitch_quat(const float circle_params[3], Quaternion* result)
 {
 	//find pitch (theta_x)
 
 	Vec2D v1;
 
-	v1.x = 0 - results[0];
-	v1.y = 0 - results[1];
+	v1.x = -circle_params[0];
+	v1.y = -circle_params[1];
 	float v1norm = norm(&v1);
 	//find vertex
 	Vec2D vert;
-	vert.x = (v1.x/v1norm)*results[2] + results[0];
-	vert.y = (v1.y/v1norm)*results[2] + results[1];
+	vert.x = (v1.x/v1norm)*circle_params[2] + circle_params[0];
+	vert.y = (v1.y/v1norm)*circle_params[2] + circle_params[1];
 
+        // k is the distance to the vertex
 	float k;
 
 	//check if image centre is inside horizon
-	if(results[2] > norm(&v1)){
+	if(circle_params[2] > norm(&v1)){
 		//centre is inside the horizon
 		//k is negative
 		k = -1*norm(&vert);
@@ -88,11 +85,16 @@ float find_pitch(const float results[3])
 		k = norm(&vert);
 	}
 
-	return atan((k/d)*tan(FOV/2)) + asin(E_RADIUS/(E_RADIUS+ALTITUDE));
+	float theta = atanf((k/d)*tan(FOV/2)) + asinf(E_RADIUS/(E_RADIUS+ALTITUDE));
+        result->w = cosf(0.5f*theta);
+        result->x = sinf(0.5f*theta);
+        result->y = 0.0f;
+        result->z = 0.0f;
 }
 
-float find_yaw(const float mag[3], const float T[3][3], const float theta_x, const float theta_z)
+float find_yaw_quat(const float mag[3], const Quaternion* R, const Quaternion* T)
 {
+#if 0
 	/*
 	mag is the 3 dimensional magnetometer vector
 	T is the affine transformation matrix
@@ -131,10 +133,46 @@ float find_yaw(const float mag[3], const float T[3][3], const float theta_x, con
 
 	return theta_y;
 
+#else
+    
+    float nadir[3] = {-R[0][2], -R[1][2], -R[2][2]};
+    
+    float field_strength = norm(mag);
+
+    // Project the magnetometer reading onto the plane normal
+    // to the nadir vector. This is the direction we are treating
+    // as north.
+    float north[3] = {
+        mag[0] - nadir[0]*mag[0] / field_strength,
+        mag[1] - nadir[1]*mag[1] / field_strength,
+        mag[2] - nadir[2]*mag[2] / field_strength
+    };
+
+    // Normalize the north vector
+    float north_norm = norm(north);
+    north[0] /= north_norm;
+    north[1] /= north_norm;
+    north[2] /= north_norm;
+
+    // Rotate xy axes into the same plane
+    float x[3] = {1.0f, 0.0f, 0.0f};
+    float y[3] = {0.0f, 1.0f, 0.0f};
+
+    quaternion_rotate(R, x);
+    quaternion_rotate(R, y);
+
+    // Dot these vectors to find the angle
+    float sin_angle_to_north = -north[0]*x[0] - north[1]*x[1] - north[2]*x[2];
+    float cos_angle_to_north = north[0]*y[0] + north[1]*y[1] + north[2]*y[2];
+
+    dprintf("angle from north %f\n", acosf(cos_angle_from_north));
+    
+#endif
 }
 
 void find_nadir(const float results[3], float nadir[3])
 {
+#if 0
 	//result is an array containing circle parameters (x_0,y_0,r)
 	float theta_x = -1*find_pitch(results);
 	float theta_z = -1*find_roll(results);
@@ -155,4 +193,29 @@ void find_nadir(const float results[3], float nadir[3])
 	nadir[0] = nad[0];
 	nadir[1] = nad[1];
 	nadir[2] = nad[2];
+#else
+        Quaternion roll_quat;
+        Quaternion pitch_quat;
+
+        find_pitch_quat(results, &pitch_quat);
+        find_roll_quat(results, &roll_quat);
+
+        pitch_quat.x *= -1.0f;
+        pitch_quat.y *= -1.0f;
+        pitch_quat.z *= -1.0f;
+
+        //roll_quat.x *= -1.0f;
+        //roll_quat.y *= -1.0f;
+        //roll_quat.z *= -1.0f;
+
+        Quaternion overall_transformation = quaternion_multiply(&roll_quat, &pitch_quat);
+
+        find_yaw_quat(
+
+        nadir[0] = 0.0f;
+        nadir[1] = 0.0f;
+        nadir[2] = -1.0f;
+        
+        quaternion_rotate(&overall_transformation, nadir);
+#endif
 }
