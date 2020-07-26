@@ -92,51 +92,18 @@ void find_pitch_quat(const float circle_params[3], Quaternion* result)
     result->z = 0.0f;
 }
 
-float find_yaw_quat(const float mag[3], const Quaternion* R, const Quaternion* T)
+void find_yaw_quat(const float mag[3], const Quaternion* R, const Quaternion* T, Quaternion* result)
 {
-#if 0
-	/*
-	mag is the 3 dimensional magnetometer vector
-	T is the affine transformation matrix
-	th_x is the pitch angle (rotation about x, from camera boresight to horizon vertex)
-	th_z is the roll angle (rotation about -z, between camera vertical and horizon vertex to centre screen)
-	*/
+    /*
+    mag is the 3 dimensional magnetometer vector
+    */
 
-	//put magnetometer into local array
-	//I'm doing this because I dont know where the magnetometer value will be in memory
-	//and I dont want to mess with it if we pass the reference to it directly
-	float magnet[3];
+    // TODO: worry about T
 
-	//transform magnetometer value into camera frame of reference
-	multiply33by31(T, mag, magnet);
+    float nadir[3] = {0.0f, 0.0f, -1.0f};
+    quaternion_rotate(R, nadir);
 
-	//rotate magnetometer value around x and then around z
-	float Rx[3][3] = {{1, 0, 0}, {0, cos(theta_x), -1*sin(theta_x)}, {0, sin(theta_x), cos(theta_x)}};
-	float Rz[3][3] = {{cos(theta_z), -1*sin(theta_z), 0}, {sin(theta_z), cos(theta_z), 0}, {0, 0, 1}};
-
-	float m_temp[3];
-
-	multiply33by31(Rx, magnet, m_temp);
-	multiply33by31(Rz, m_temp, magnet);
-
-	//magnetometer value is in x-z plane
-	//yaw should be angle between -z and magnet
-	//[0,0,-1]dot[magx,magy,magz]
-	float theta_y = acos(-1*magnet[2]);
-
-	//determine the sign of the angle
-	float A[2][2] = {{0, magnet[0]}, {-1, magnet[2]}};
-
-	if(det2(A) < 0){
-		theta_y = -1*theta_y;
-	}
-
-	return theta_y;
-
-    
-    float nadir[3] = {-R[0][2], -R[1][2], -R[2][2]};
-    
-    float field_strength = norm(mag);
+    float field_strength = norm3(mag);
 
     // Project the magnetometer reading onto the plane normal
     // to the nadir vector. This is the direction we are treating

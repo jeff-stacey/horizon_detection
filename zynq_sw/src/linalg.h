@@ -40,9 +40,12 @@ typedef struct
 } Quaternion;
 
 Quaternion quaternion_multiply(const Quaternion* lhs, const Quaternion* rhs);
+Quaternion quaternion_inverse(const Quaternion* quat);
 void quaternion_rotate(const Quaternion* rot, float v[3]);
 
 float norm(Vec2D* V);
+
+float norm3(const float v[3]);
 
 float det2(float A[2][2]);
 

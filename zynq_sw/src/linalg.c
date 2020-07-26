@@ -93,6 +93,17 @@ Quaternion quaternion_multiply(const Quaternion* lhs, const Quaternion* rhs)
     return result;
 }
 
+Quaternion quaternion_inverse(const Quaternion* quat)
+{
+    Quaternion result;
+    result.w = quat->w;
+    result.x = -quat->x;
+    result.y = -quat->y;
+    result.z = -quat->z;
+
+    return result;
+}
+
 void quaternion_rotate(const Quaternion* rot, float v[3])
 {
     Quaternion result_quat;
@@ -101,10 +112,7 @@ void quaternion_rotate(const Quaternion* rot, float v[3])
     result_quat.y = v[1];
     result_quat.z = v[2];
 
-    Quaternion rot_inverse = *rot;
-    rot_inverse.x *= -1.0f;
-    rot_inverse.y *= -1.0f;
-    rot_inverse.z *= -1.0f;
+    Quaternion rot_inverse = quaternion_inverse(rot);
 
     result_quat = quaternion_multiply(rot, &result_quat);
     result_quat = quaternion_multiply(&result_quat, &rot_inverse);

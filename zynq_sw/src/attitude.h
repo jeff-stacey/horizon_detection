@@ -29,7 +29,7 @@ void find_roll_quat(const float circle_params[3], Quaternion* result);
 
 void find_pitch_quat(const float circle_params[3], Quaternion* result);
 
-float find_yaw_quat(const float mag[3], const Quaternion* R, const Quaternion* T);
+void find_yaw_quat(const float mag[3], const Quaternion* R, const Quaternion* T, Quaternion* result);
 
 void find_nadir(const float results[3], float nadir[3]);
 
