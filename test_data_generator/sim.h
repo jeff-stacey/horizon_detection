@@ -23,7 +23,12 @@ struct SimulationState
     // Outputs
     Vec3 nadir;
     Vec3 magnetic_field; // nGauss, in camera reference frame
-    Vec3 magnetometer;   // in rotated reference frame
+    struct
+    {
+        int16_t x;
+        int16_t y;
+        int16_t z;
+    } magnetometer;   // in rotated reference frame
 
     // This is generated from the magnetometer_reference_frame quaternion
     // This could be an input, but the test data generator already takes

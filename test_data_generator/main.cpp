@@ -264,7 +264,11 @@ void compute_outputs(SimulationState* state, GeomagnetismData geomag)
 
     state->magnetic_field = Vec3(magnetic_field.Y, magnetic_field.X, -magnetic_field.Z);
     state->magnetic_field = state->camera.apply_rotation(state->magnetic_field);
-    state->magnetometer = (0.001f / MAGNETIC_FIELD_SENSITIVITY) * state->magnetometer_reference_frame.apply_rotation(state->magnetic_field);
+    Vec3 magnetometer = (0.001f / MAGNETIC_FIELD_SENSITIVITY) * state->magnetometer_reference_frame.apply_rotation(state->magnetic_field);
+    // convert magnetometer to int16_t
+    state->magnetometer.x = static_cast<int16_t>(roundf(magnetometer.x));
+    state->magnetometer.y = static_cast<int16_t>(roundf(magnetometer.y));
+    state->magnetometer.z = static_cast<int16_t>(roundf(magnetometer.z));
 
     // Convert the 3x3 rotation matrix obtained from the quaternion into a 4x4 affine transformation matrix
     // (with zero translation).
@@ -401,7 +405,7 @@ void start_gui(RenderState render_state, SimulationState state, FuzzOptions fuzz
                 ImGui::Text("Nadir: (%f, %f, %f)", state.nadir.x, state.nadir.y, state.nadir.z);
 
                 ImGui::Text("Magnetic Field (nGauss): (%.0f, %.0f, %.0f)", state.magnetic_field.x, state.magnetic_field.y, state.magnetic_field.z);
-                ImGui::Text("Magnetometer Reading: (%.0f, %.0f, %.0f)", state.magnetometer.x, state.magnetometer.y, state.magnetometer.z);
+                ImGui::Text("Magnetometer Reading: (%d, %d, %d)", state.magnetometer.x, state.magnetometer.y, state.magnetometer.z);
 
                 ImGui::TreePop();
             }
