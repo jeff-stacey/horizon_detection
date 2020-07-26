@@ -45,8 +45,8 @@ pixel TestImg[120][160];
 int alg_choice = 0;
 
 // Edge detection parameters
-float lowRatio = 0.3;
-float highRatio = 0.67;
+float lowRatio = 0.5;
+float highRatio = 0.8;
 pixel strong = 0x3fff;  // Totally black pixel == 16383 == 0x3fff
                         // Totally white pixel == 0
 pixel weak = 0x666;     // set weak to ~10% of total magnitude

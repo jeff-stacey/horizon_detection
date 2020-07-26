@@ -46,9 +46,9 @@ int16_t kernel_x[K_DIM][K_DIM] = {
 
 int16_t kernel_y[K_DIM][K_DIM] = {
         // SOBEL kernel
-            {1, 2, 1},
+            {-1, -2, -1},
             {0, 0, 0},
-            {-1, -2, -1}
+            {1, 2, 1}
         };
 
 /*******************
@@ -63,8 +63,8 @@ int16_t kernel_y[K_DIM][K_DIM] = {
  *
 *******************************************************/
 void conv2d(pixel A[R_DIM][C_DIM], pixel C[R_DIM][C_DIM], int16_t K[K_DIM][K_DIM]) {
-    int16_t rows = R_DIM;
-    int16_t cols = C_DIM;
+    uint16_t rows = R_DIM;
+    uint16_t cols = C_DIM;
     int16_t a, b, i, j;
     volatile int16_t sum = 0;
 
@@ -82,7 +82,7 @@ void conv2d(pixel A[R_DIM][C_DIM], pixel C[R_DIM][C_DIM], int16_t K[K_DIM][K_DIM
             /*Sum Thresholding*/
             if (sum < 0) sum = 0;
             if (sum > 0x3fff) sum = 0x3fff;
-            C[i][j] = sum;
+            C[i][j] = (pixel)sum;
         }
     }
 };
@@ -194,8 +194,8 @@ void doubleThreshold (pixel A[R_DIM][C_DIM], float lowRatio, float highRatio) {
     };
 
     // Calculate Thresholds
-    pixel highThresh = (pixel)max*highRatio;
-	pixel lowThresh  = (pixel)highThresh*lowRatio;
+    pixel highThresh = max*highRatio;
+	pixel lowThresh  = highThresh*lowRatio;
 
 	// Define values of weak and strong edges
 	pixel weak = 0x666;
