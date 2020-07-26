@@ -25,6 +25,7 @@ SOFTWARE.
 #include "linalg.h"
 #include "circle_fit.h"
 #include "attitude.h"
+#include "perf.h"
 
 #include <stdint.h>
 #include <math.h>
@@ -68,8 +69,18 @@ int subset_num = 20;
 
 // Results
 float nadir[3];
+uint32_t cycles = 0;
 
 int main() {
+
+    init_ccount();
+
+    // there's some overhead to the cycle count call
+    uint32_t overhead = get_ccount();
+    // it should be fixed, so if we measure it, we can subtract it off
+    overhead = get_ccount() - overhead;
+
+    uint32_t t0 = get_ccount();
 
     dprintf("Starting horizon detection.\n\r");
 
@@ -134,8 +145,12 @@ int main() {
         find_nadir(circ_params, nadir);
     }
 
+    uint32_t t1 = get_ccount();
+    cycles = t1 - t0 - overhead;
+    dprintf("took %lu cycles\n", cycles);
+
     //print results
-    printf("nadir:\n");
+    dprintf("nadir:\n");
     print3(nadir);
 
     asm volatile ("end_of_main:");
