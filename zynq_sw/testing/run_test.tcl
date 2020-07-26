@@ -14,8 +14,8 @@ proc vread { name } {
 # reads 160x120 image to binary file called file_name
 # i'm not using this right now, but it's indended for edge detection debugging
 proc imread { var_name file_name } {
-    set base_addr [lindex [print &$name] 2]
-    mrd -bin -file $file_name [expr 160*120]
+    set base_addr [lindex [print &$var_name] 2]
+    mrd -bin -size h -file $file_name $base_addr [expr 160*120]
 }
 
 proc isnan { x } {
@@ -152,7 +152,9 @@ foreach testfile $testfiles {
 
     set image_base_addr [lindex [print &$image_variable_name] 2]
     puts "\tCopying image data from $testfile into memory"
-    mwr -bin -file $testing_dir/$testfile $image_base_addr [expr 160*120]
+    mwr -bin -size h -file $testing_dir/$testfile $image_base_addr [expr 160*120]
+
+    #imread TestImg out.bin
 
     # Set this to 
     # 0 for edge detection and least-squares curve fit
