@@ -481,6 +481,7 @@ int main(int argc, char** args)
         for (unsigned int i = 0; i < options.fuzz.count; ++i)
         {
             randomize_state(&options.loaded_state, options.fuzz);
+            generate_noise(options.loaded_state.noise_seed, options.loaded_state.noise_stdev, &render_state);
             compute_outputs(&options.loaded_state, geomag);
             export_all(base_filename + std::to_string(i), render_state, options.loaded_state);
         }

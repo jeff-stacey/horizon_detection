@@ -21,7 +21,7 @@
 
 #define DEFAULT_ALTITUDE 500.0
 #define DEFAULT_ORIENTATION Quaternion::pitch(M_PI * 0.4)
-#define DEFAULT_MAGNETOMETER_REFERENCE_FRAME Quaternion::pitch(-M_PI * 0.5)
+#define DEFAULT_MAGNETOMETER_REFERENCE_FRAME Quaternion()
 
 // These are in degrees, since WMM model takes degrees
 // This is Victoria, BC :)
