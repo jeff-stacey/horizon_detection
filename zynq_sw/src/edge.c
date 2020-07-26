@@ -31,14 +31,14 @@ SOFTWARE.
 ********************/
 
 float kernel_gauss[K_DIM][K_DIM] = {
-		// Gaussian Blur kernel
-			{1.0/16, 2.0/16, 1.0/16},
-			{2.0/16, 4.0/16, 2.0/16},
-			{1.0/16, 2.0/16, 1.0/16}
-		};
+        // Gaussian Blur kernel
+            {1.0/16, 2.0/16, 1.0/16},
+            {2.0/16, 4.0/16, 2.0/16},
+            {1.0/16, 2.0/16, 1.0/16}
+        };
 
 int16_t kernel_x[K_DIM][K_DIM] = {
-		// SOBEL kernel
+        // SOBEL kernel
             {-1, 0, 1},
             {-2, 0, 2},
             {-1, 0, 1}
@@ -128,90 +128,90 @@ void conv2dGauss(pixel A[R_DIM][C_DIM], pixel C[R_DIM][C_DIM], float K[K_DIM][K_
 **********************************************************************/
 void nonMaxSuppression(pixel A[R_DIM][C_DIM], pixel G[R_DIM][C_DIM], float T[R_DIM][C_DIM]) {
 
-	uint16_t i, j, q, r;
-	float angle = 0;
-	pixel current;
+    uint16_t i, j, q, r;
+    float angle = 0;
+    pixel current;
 
-	// Iterate through matrix
-	for(i = 2; i < R_DIM-2 ; i++) {
-		for(j = 2; j < C_DIM-2 ; j++) {
-			q = 0x3fff;
-			r = 0x3fff;
+    // Iterate through matrix
+    for(i = 2; i < R_DIM-2 ; i++) {
+        for(j = 2; j < C_DIM-2 ; j++) {
+            q = 0x3fff;
+            r = 0x3fff;
 
-			// Convert angle to degrees and scale so non-negative
-			angle = T[i][j]*180/M_PI;
-			if (angle < 0) angle += 180;
+            // Convert angle to degrees and scale so non-negative
+            angle = T[i][j]*180/M_PI;
+            if (angle < 0) angle += 180;
 
-			// Obtain neighbor pixels in gradient direction
-			if ((0 <= angle && angle < 22.5) || (157.5 <= angle && angle <= 180)) {
-				// Angle 0
-				q = G[i][j+1];
-				r = G[i][j-1];
-			} else if (22.5 <= angle && angle < 67.5) {
-				// Angle 45
-				q = G[i+1][j-1];
-				r = G[i-1][j+1];
-			} else if (67.5 <= angle && angle < 112.5) {
-				// Angle 90
-				q = G[i+1][j];
-				r = G[i-1][j];
-			} else if (112.5 <= angle && angle < 157.5) {
-				// Angle 135
-				q = G[i-1][j-1];
-				r = G[i+1][j+1];
-			}
+            // Obtain neighbor pixels in gradient direction
+            if ((0 <= angle && angle < 22.5) || (157.5 <= angle && angle <= 180)) {
+                // Angle 0
+                q = G[i][j+1];
+                r = G[i][j-1];
+            } else if (22.5 <= angle && angle < 67.5) {
+                // Angle 45
+                q = G[i+1][j-1];
+                r = G[i-1][j+1];
+            } else if (67.5 <= angle && angle < 112.5) {
+                // Angle 90
+                q = G[i+1][j];
+                r = G[i-1][j];
+            } else if (112.5 <= angle && angle < 157.5) {
+                // Angle 135
+                q = G[i-1][j-1];
+                r = G[i+1][j+1];
+            }
 
-			// Check if current pixel is a maximum in this direction
-			current = G[i][j];
-			if ((current >= q) && (current >= r)) {
-				A[i][j] = current;
-			} else {
-				A[i][j] = 0;
-			}
+            // Check if current pixel is a maximum in this direction
+            current = G[i][j];
+            if ((current >= q) && (current >= r)) {
+                A[i][j] = current;
+            } else {
+                A[i][j] = 0;
+            }
 
-		}
-	}
+        }
+    }
 };
 
 /********************************************************************
  *    Double Thresholding
- *    Inputs:  	  A 	 - 120X160 Image Matrix
+ *    Inputs:        A      - 120X160 Image Matrix
  *             lowRatio  - low_thresh/high_thresh
  *             highRatio - high_thresh/maximum_value
  *
 **********************************************************************/
 void doubleThreshold (pixel A[R_DIM][C_DIM], float lowRatio, float highRatio) {
 
-	// Obtain max image value to determine thresholds
-	uint16_t i, j;
-	pixel max = 0;
-	pixel a_pix;
+    // Obtain max image value to determine thresholds
+    uint16_t i, j;
+    pixel max = 0;
+    pixel a_pix;
     for (i = 2; i < R_DIM-2 ; i++) {
         for (j = 2; j < C_DIM-2 ; j++) {
-        	a_pix = A[i][j];
-        	if (a_pix > max) max = a_pix;
+            a_pix = A[i][j];
+            if (a_pix > max) max = a_pix;
         };
     };
 
     // Calculate Thresholds
     pixel highThresh = (pixel)max*highRatio;
-	pixel lowThresh  = (pixel)highThresh*lowRatio;
+    pixel lowThresh  = (pixel)highThresh*lowRatio;
 
-	// Define values of weak and strong edges
-	pixel weak = 0x666;
-	pixel strong = 0x3fff;
+    // Define values of weak and strong edges
+    pixel weak = 0x666;
+    pixel strong = 0x3fff;
 
-	// Filter the matrix to contain only 3 possible values (strong, weak, 0)
+    // Filter the matrix to contain only 3 possible values (strong, weak, 0)
     for (i=2; i < R_DIM-2 ; i++) {
         for (j=2; j < C_DIM-2 ; j++) {
-        	a_pix = A[i][j];
-        	if (a_pix >= highThresh) {
-        		A[i][j] = strong;
-        	} else if ((a_pix <= highThresh) && (a_pix >= lowThresh)) {
-        		A[i][j] = weak;
-        	} else {
-        		A[i][j] = 0;
-        	}
+            a_pix = A[i][j];
+            if (a_pix >= highThresh) {
+                A[i][j] = strong;
+            } else if ((a_pix <= highThresh) && (a_pix >= lowThresh)) {
+                A[i][j] = weak;
+            } else {
+                A[i][j] = 0;
+            }
         };
     };
 
@@ -220,7 +220,7 @@ void doubleThreshold (pixel A[R_DIM][C_DIM], float lowRatio, float highRatio) {
 
 /********************************************************************
  *    Edge Tracking by Hysteresis
- *    Inputs:  	 A 	  - 120x160 Image Array
+ *    Inputs:       A       - 120x160 Image Array
  *             strong - Value of "strong" edge pixel = 255
  *              weak  - Value of "weak" edge pixel = 25
  *
@@ -232,17 +232,17 @@ void edgeTracking(pixel A[R_DIM][C_DIM], pixel strong, pixel weak) {
     // Check around weak edges to see if they're part of a strong edge
     for (i=2; i < R_DIM-2 ; i++) {
         for (j=2; j < C_DIM-2 ; j++) {
-        	if (A[i][j] == weak) {
-        		// If any strong pixels around it, assign strong, else assign 0
-        		if (A[i-1][j-1] == strong || A[i-1][j] == strong || A[i-1][j+1] == strong ||
-        			 A[i][j-1]  == strong || A[i][j+1] == strong ||
-					A[i+1][j-1] == strong || A[i+1][j] == strong || A[i+1][j+1] == strong)
-        		{
-        			A[i][j] = strong;
-        		} else {
-        			A[i][j] = 0;
-        		}
-        	}
+            if (A[i][j] == weak) {
+                // If any strong pixels around it, assign strong, else assign 0
+                if (A[i-1][j-1] == strong || A[i-1][j] == strong || A[i-1][j+1] == strong ||
+                     A[i][j-1]  == strong || A[i][j+1] == strong ||
+                    A[i+1][j-1] == strong || A[i+1][j] == strong || A[i+1][j+1] == strong)
+                {
+                    A[i][j] = strong;
+                } else {
+                    A[i][j] = 0;
+                }
+            }
 
         };
     };
@@ -296,13 +296,13 @@ void printRowSum(pixel A[R_DIM][C_DIM]) {
 
     for (int i = 0; i < R_DIM; i++)
     {
-		row_acc = 0;
-    	for (int j = 0; j < C_DIM; j++)
-    	{
-    		row_acc += A[i][j];
-    	}
+        row_acc = 0;
+        for (int j = 0; j < C_DIM; j++)
+        {
+            row_acc += A[i][j];
+        }
 
-    	dprintf("\trow sum for %3d is %d\n", i, row_acc);
+        dprintf("\trow sum for %3d is %d\n", i, row_acc);
     }
 }
 
@@ -312,13 +312,13 @@ void printRowSumTheta(float A[R_DIM][C_DIM]) {
 
     for (int i = 0; i < R_DIM; i++)
     {
-		row_acc = 0;
-    	for (int j = 0; j < C_DIM; j++)
-    	{
-    		row_acc += A[i][j];
-    	}
+        row_acc = 0;
+        for (int j = 0; j < C_DIM; j++)
+        {
+            row_acc += A[i][j];
+        }
 
-    	dprintf("\trow sum for %3d is %f\n", i, row_acc);
+        dprintf("\trow sum for %3d is %f\n", i, row_acc);
     }
 }
 

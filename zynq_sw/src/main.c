@@ -31,7 +31,7 @@ SOFTWARE.
 #include <math.h>
 
 /********************************
- *			Global Vars			*
+ *            Global Vars            *
  ********************************/
 
 // Input image
@@ -52,11 +52,11 @@ pixel strong = 0x3fff;  // Totally black pixel == 16383 == 0x3fff
 pixel weak = 0x666;     // set weak to ~10% of total magnitude
 
 // Edge Detection intermediate products
-pixel blurred[120][160];	// Create gaussian blurring step output
-pixel edge_x[120][160]; 	// Create x-direction gradient map output
-pixel edge_y[120][160]; 	// Create y-direction gradient map output
-pixel grad[120][160]; 		// Create Grad-Magnitude output
-float theta[120][160]; 	    // Create Grad-Direction output
+pixel blurred[120][160];    // Create gaussian blurring step output
+pixel edge_x[120][160];     // Create x-direction gradient map output
+pixel edge_y[120][160];     // Create y-direction gradient map output
+pixel grad[120][160];         // Create Grad-Magnitude output
+float theta[120][160];         // Create Grad-Direction output
 pixel suppressed[120][160]; // Create Output for non-max suppression step
 uint16_t num_points = 0;
 Vec2D edge_points[19200];   // Create output array for number of edges

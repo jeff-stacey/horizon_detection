@@ -36,8 +36,8 @@ Vec2D find_intersection(Line2D* L1, Line2D* L2){
 
     if(P[2] == 0){
         //lines do not intersect
-    	intersection.x = NAN;
-    	intersection.y = NAN;
+        intersection.x = NAN;
+        intersection.y = NAN;
         return intersection;
     }else{
         //Project the 3d triple onto 2D to get the intersection
@@ -49,5 +49,5 @@ Vec2D find_intersection(Line2D* L1, Line2D* L2){
 
 void printline(Line2D* L)
 {
-	dprintf("%fx + %fy + %f = 0\n", L->a, L->b, L->c);
+    dprintf("%fx + %fy + %f = 0\n", L->a, L->b, L->c);
 }

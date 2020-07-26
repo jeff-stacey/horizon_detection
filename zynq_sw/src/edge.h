@@ -94,7 +94,7 @@ void nonMaxSuppression(pixel A[R_DIM][C_DIM], pixel G[R_DIM][C_DIM], float T[R_D
 
 /********************************************************************
  *    Double Thresholding
- *    Inputs:  	  A 	 - 120X160 Image Matrix
+ *    Inputs:        A      - 120X160 Image Matrix
  *             lowRatio  - low_thresh/high_thresh
  *             highRatio - high_thresh/maximum_value
  *
@@ -103,7 +103,7 @@ void doubleThreshold (pixel A[R_DIM][C_DIM], float lowRatio, float highRatio);
 
 /********************************************************************
  *    Edge Tracking by Hysteresis
- *    Inputs:  	 A 	  - 120x160 Image Array
+ *    Inputs:       A       - 120x160 Image Array
  *             strong - Value of "strong" edge pixel = 255
  *              weak  - Value of "weak" edge pixel = 25
  *

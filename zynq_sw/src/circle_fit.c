@@ -123,7 +123,7 @@ void lineintersect_circle_fit(const Vec2D data[], int len_data, int sample_num, 
 
                     if(!(norm(&v1) < 10 || norm(&v2) < 10)){
                         //skip these points if theyre too close together
-                    	//mid point between p1 and p2
+                        //mid point between p1 and p2
 
                         m1.x = 0.5*v1.x + p1.x;
                         m1.y = 0.5*v1.y + p1.y;
