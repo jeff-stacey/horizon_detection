@@ -51,7 +51,7 @@ if { $args(csv) eq ""} {
 
 # detemine what test data we want to use 
 if { $args(tdir) eq "" } {
-    set testfiles [lindex $argv 0]
+    set testfiles $argv
 } else {
     set testfiles [glob $args(tdir)/*.bin]
 }
@@ -150,11 +150,31 @@ con -block -timeout 10
 foreach testfile $testfiles {
     puts "Starting test for $testfile"
 
+    # open the image parameter file and load the data
+    set hrz_filename [concat [lindex [split $testfile .] 0].hrz]
+    set hrz_file [open $hrz_filename "rb"]
+    set hrz [read $hrz_file]
+    close $hrz_file
+
+    # extract values from the file
+    binary scan $hrz ffffffffffffffffffffsssf16 qwref qxref qyref qzref mquatw mquatx mquaty mquatz altitude latitude longitude noise_seed noise_stdev visible_atmosphere_height nxref nyref nzref magx magy magz magreadingx magreadingy magreadingz mag_trans
+
+    # insert the image into memory
     set image_base_addr [lindex [print &$image_variable_name] 2]
     puts "\tCopying image data from $testfile into memory"
     mwr -bin -size h -file $testing_dir/$testfile $image_base_addr [expr 160*120]
 
     #imread TestImg out.bin
+    
+    # write the magnetometer transformation into memory
+    for {set i 0} {$i < 16} {incr i} {
+        print -s magnetometer_transformation[$i] [lindex $mag_trans $i]
+    }
+
+    # write the magnetometer reading into memory
+    print -s magnetometer_reading[0] $magreadingx
+    print -s magnetometer_reading[1] $magreadingy
+    print -s magnetometer_reading[2] $magreadingz
 
     # Set this to 
     # 0 for edge detection and least-squares curve fit
@@ -187,22 +207,14 @@ foreach testfile $testfiles {
     set nzmes [vread nadir[2]]
 
     # grab the quaternion (NOT IMPLEMENTED)
-    set qwmes 0
-    set qxmes 0
-    set qymes 0
-    set qzmes 0
+    set qwmes [vread orientation.w]
+    set qxmes [vread orientation.x]
+    set qymes [vread orientation.y]
+    set qzmes [vread orientation.z]
 
     # grab the number of points the edge detection found
     set num_points [vread num_points]
 
-    # open the image parameter file and load the data
-    set hrz_filename [concat [lindex [split $testfile .] 0].hrz]
-    set hrz_file [open $hrz_filename "rb"]
-    set hrz [read $hrz_file]
-    close $hrz_file
-
-    # extract values from the file
-    binary scan $hrz fffffffffffffffffffffff qwref qxref qyref qzref mquatw mquatx mquaty mquatz altitude latitude longitude noise_seed noise_stdev visible_atmosphere_height nxref nyref nzref magx magy magz magreadingx magreadingy magreadingz
 
     # compare values and print results
     if {$alg_choice == 0} {
@@ -214,36 +226,42 @@ foreach testfile $testfiles {
     puts "\tEdge Detection found $num_points points"
 
     puts "\tNadir Vector:"
-    puts "\t   Baseline    Detected    "
 
     set nancount 0
 
     if { [isnan $nxmes] } {
         # nans don't equal each other
-        puts [format "\tx: %.10f  nan" $nxref]
+        puts [format "\tx: %+.10f  nan" $nxref]
         incr nancount
     } else {
-        puts [format "\ty: %.10f  %.10f" $nxref $nxmes]
+        puts [format "\tx: %+.10f  %+.10f" $nxref $nxmes]
     }
     if { [isnan $nymes] } {
         # nans don't equal each other
-        puts [format "\tx: %.10f  nan" $nyref]
+        puts [format "\ty: %+.10f  nan" $nyref]
         incr nancount
     } else {
-        puts [format "\ty: %.10f  %.10f" $nyref $nymes]
+        puts [format "\ty: %+.10f  %+.10f" $nyref $nymes]
     }
     if { [isnan $nzmes] } {
         # nans don't equal each other
-        puts [format "\tx: %.10f  nan" $nzref]
+        puts [format "\tz: %+.10f  nan" $nzref]
         incr nancount
     } else {
-        puts [format "\ty: %.10f  %.10f" $nzref $nzmes]
+        puts [format "\tz: %+.10f  %+.10f" $nzref $nzmes]
     }
 
     if { $nancount == 0 } {
         set pi [expr acos(-1.0)]
         set err_angle [expr 180 / $pi * acos($nxref * $nxmes + $nyref * $nymes + $nzref * $nzmes)]
         puts [format "\tDetected nadir vector is off by %.4f degrees" $err_angle]
+
+        puts "\tOutput Quaternion"
+        puts "\t   Baseline       Detected"
+        puts [format "\tw: %+.10f  %+.10f" $qwref $qwmes]
+        puts [format "\tx: %+.10f  %+.10f" $qxref $qxmes]
+        puts [format "\ty: %+.10f  %+.10f" $qyref $qymes]
+        puts [format "\tz: %+.10f  %+.10f" $qzref $qzmes]
     } else {
         set err_angle NaN
     }
@@ -252,6 +270,7 @@ foreach testfile $testfiles {
         # write results to CSV file
         puts $csvf "$testfile,$alg_choice,$err_angle,$num_points,$noise_stdev,$visible_atmosphere_height,$runtime,$qwmes,$qxmes,$qymes,$qzmes,$nxmes,$nymes,$nzmes,$qwref,$qxref,$qyref,$qzref,$mquatw,$mquatx,$mquaty,$mquatz,$altitude,$latitude,$longitude,$noise_seed,$nxref,$nyref,$nzref,$magx,$magy,$magz,$magreadingx,$magreadingy,$magreadingz"
     }
+
 }
 
 if {$use_csv} {

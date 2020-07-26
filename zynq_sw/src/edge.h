@@ -40,7 +40,7 @@ SOFTWARE.
 ********************/
 
 /* Types */
-typedef int16_t pixel;  //16-bit images
+typedef uint16_t pixel;  //16-bit images
 
 /*Image Dimensions*/
 #define R_DIM 120

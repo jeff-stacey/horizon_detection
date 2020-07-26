@@ -34,8 +34,18 @@ SOFTWARE.
  *            Global Vars            *
  ********************************/
 
+// INPUTS: should be populated externally
+// e.g. by the test script or by hardware reading sensors
+
 // Input image
 pixel TestImg[120][160];
+
+// Magnetometer readings and transformation
+int16_t magnetometer_reading[3];
+float magnetometer_transformation[16];
+
+// PARAMETERS: are initialized, but can be modified externally
+// they should remain constant while main is running
 
 // We have a couple algorithm options. 
 // This variable selects which one to run:
@@ -45,11 +55,13 @@ pixel TestImg[120][160];
 int alg_choice = 0;
 
 // Edge detection parameters
-float lowRatio = 0.3;
-float highRatio = 0.67;
+float lowRatio = 0.5;
+float highRatio = 0.8;
 pixel strong = 0x3fff;  // Totally black pixel == 16383 == 0x3fff
                         // Totally white pixel == 0
 pixel weak = 0x666;     // set weak to ~10% of total magnitude
+
+// INTERMEDIATE PRODUCTS: used by the algorithm for temporary storage
 
 // Edge Detection intermediate products
 pixel blurred[120][160];    // Create gaussian blurring step output
@@ -67,8 +79,10 @@ float circ_params[3];
 // the rest of these are specifically for chord fitting
 int subset_num = 20;
 
-// Results
+// RESULTS:
+
 float nadir[3];
+Quaternion orientation = {0,0,0,0};
 uint32_t cycles = 0;
 
 int main() {
@@ -81,8 +95,12 @@ int main() {
     overhead = get_ccount() - overhead;
 
     uint32_t t0 = get_ccount();
-
+    
     dprintf("Starting horizon detection.\n\r");
+
+    for (int i = 0; i < 3; i++){
+        dprintf("%d\n", magnetometer_reading[i]);
+    }
 
     if ((alg_choice == 0) || (alg_choice == 1)) {
         dprintf("\nEdge Detection Testing Start\n");
