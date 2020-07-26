@@ -31,11 +31,11 @@ proc isnan { x } {
 ######################
 
 set parameters {
-    { build     "Build the BSP and application before testing"}
-    { hw        "Run the test on a connected Zynq MPSoC" }
-    { tdir      "Test on every available image in the specified directory" }
-    { alg.arg 0 "Select which algorithm to use: 0 - edge detection and least-squares, 1 - edge detection and chord fit, 2 - vsearch" }
-    { csv.arg "" "Write results to CSV file of specified name"}
+    { build         "Build the BSP and application before testing"}
+    { hw            "Run the test on a connected Zynq MPSoC" }
+    { tdir.arg ""   "Test on every available image in the specified directory" }
+    { alg.arg 0     "Select which algorithm to use: 0 - edge detection and least-squares, 1 - edge detection and chord fit, 2 - vsearch" }
+    { csv.arg ""    "Write results to CSV file of specified name"}
 }
 
 set usage "usage: xsct run_test.tcl \[-build\] \[-hw\] \[-alg \{0 | 1 | 2\}\] \{-tdir test_dir | bin_file\}"
@@ -44,16 +44,16 @@ set usage "usage: xsct run_test.tcl \[-build\] \[-hw\] \[-alg \{0 | 1 | 2\}\] \{
 array set args [cmdline::getoptions argv $parameters $usage]
 
 if { $args(csv) eq ""} {
-    error "Please provide a CSV filename!"
+    set use_csv 0
+} else {
+    set use_csv 1
 }
 
 # detemine what test data we want to use 
-# because of the way i'm parsing arguments, this has to happen after parsing all other flags
-set tf [lindex $argv 0]
-if { $args(tdir) } {
-    set testfiles [glob $tf/*.bin]
+if { $args(tdir) eq "" } {
+    set testfiles [lindex $argv 0]
 } else {
-    set testfiles $tf
+    set testfiles [glob $args(tdir)/*.bin]
 }
 
 ##########################
@@ -67,12 +67,13 @@ set hw_dir "../workspace/zcu104/hw"
 
 set testing_dir [pwd]
 
-# open a .csv file for results
-
-set csvf [open $args(csv) w]
-
-# write heading line to the csv
+if { $use_csv } {
+    # open a .csv file for results
+    set csvf [open $args(csv) w]
+    # write heading line to the csv
     puts $csvf "testfile,alg_choice,err_angle,num_points,noise_stdev,visible_atmosphere_height,runtime,qwmes,qxmes,qymes,qzmes,nxmes,nymes,nzmes,qwref,qxref,qyref,qzref,mquatw,mquatx,mquaty,mquatz,altitude,latitude,longitude,noise_seed,nxref,nyref,nzref,magx,magy,magz,magreadingx,magreadingy,magreadingz"
+}
+
 
 # set the workspace
 if [file exist ../workspace] {
@@ -245,8 +246,12 @@ foreach testfile $testfiles {
         set err_angle NaN
     }
 
-    # write results to CSV file
-    puts $csvf "$testfile,$alg_choice,$err_angle,$num_points,$noise_stdev,$visible_atmosphere_height,$runtime,$qwmes,$qxmes,$qymes,$qzmes,$nxmes,$nymes,$nzmes,$qwref,$qxref,$qyref,$qzref,$mquatw,$mquatx,$mquaty,$mquatz,$altitude,$latitude,$longitude,$noise_seed,$nxref,$nyref,$nzref,$magx,$magy,$magz,$magreadingx,$magreadingy,$magreadingz"
+    if { $use_csv } {
+        # write results to CSV file
+        puts $csvf "$testfile,$alg_choice,$err_angle,$num_points,$noise_stdev,$visible_atmosphere_height,$runtime,$qwmes,$qxmes,$qymes,$qzmes,$nxmes,$nymes,$nzmes,$qwref,$qxref,$qyref,$qzref,$mquatw,$mquatx,$mquaty,$mquatz,$altitude,$latitude,$longitude,$noise_seed,$nxref,$nyref,$nzref,$magx,$magy,$magz,$magreadingx,$magreadingy,$magreadingz"
+    }
 }
 
-close $csvf
+if {$use_csv} {
+    close $csvf
+}
