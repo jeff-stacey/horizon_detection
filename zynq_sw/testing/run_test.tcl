@@ -72,7 +72,7 @@ set testing_dir [pwd]
 set csvf [open $args(csv) w]
 
 # write heading line to the csv
-    puts $csvf "testfile,alg_choice,err_angle,num_points,noise_stdev,visible_atmosphere_height,qwmes,qxmes,qymes,qzmes,nxmes,nymes,nzmes,qwref,qxref,qyref,qzref,mquatw,mquatx,mquaty,mquatz,altitude,latitude,longitude,noise_seed,nxref,nyref,nzref,magx,magy,magz,magreadingx,magreadingy,magreadingz"
+    puts $csvf "testfile,alg_choice,err_angle,num_points,noise_stdev,visible_atmosphere_height,runtime,qwmes,qxmes,qymes,qzmes,nxmes,nymes,nzmes,qwref,qxref,qyref,qzref,mquatw,mquatx,mquaty,mquatz,altitude,latitude,longitude,noise_seed,nxref,nyref,nzref,magx,magy,magz,magreadingx,magreadingy,magreadingz"
 
 # set the workspace
 if [file exist ../workspace] {
@@ -83,7 +83,6 @@ if [file exist ../workspace] {
     puts "you should have run the project setup script to generate the app."
     exit
 }
-
 
 # maybe build the application
 if { $args(build) } {
@@ -162,12 +161,22 @@ foreach testfile $testfiles {
 
     puts "\tRunning program"
     #start running at the start of main
+    set t0 [ clock microseconds ]
     con -block -addr [lindex [print main] 2]
 
-    puts "\tMain finished, reading results"
+    set t1 [clock microseconds]
+    set dt [expr $t1 - $t0]
+    puts "\tMain finished after $dt us, reading results"
     # should stop at end_of_main label
 
+    # grab which algorithm was used
     set alg_choice [vread alg_choice]
+
+    # grab the runtime
+    set cycles [vread cycles]
+    set runtime [expr $cycles * 64 * 1/500e6]
+
+    puts "\tTook $runtime seconds ($cycles cycles)"
 
     # grab the nadir vector
     set nxmes [vread nadir[0]]
@@ -237,7 +246,7 @@ foreach testfile $testfiles {
     }
 
     # write results to CSV file
-    puts $csvf "$testfile,$alg_choice,$err_angle,$num_points,$noise_stdev,$visible_atmosphere_height,$qwmes,$qxmes,$qymes,$qzmes,$nxmes,$nymes,$nzmes,$qwref,$qxref,$qyref,$qzref,$mquatw,$mquatx,$mquaty,$mquatz,$altitude,$latitude,$longitude,$noise_seed,$nxref,$nyref,$nzref,$magx,$magy,$magz,$magreadingx,$magreadingy,$magreadingz"
+    puts $csvf "$testfile,$alg_choice,$err_angle,$num_points,$noise_stdev,$visible_atmosphere_height,$runtime,$qwmes,$qxmes,$qymes,$qzmes,$nxmes,$nymes,$nzmes,$qwref,$qxref,$qyref,$qzref,$mquatw,$mquatx,$mquaty,$mquatz,$altitude,$latitude,$longitude,$noise_seed,$nxref,$nyref,$nzref,$magx,$magy,$magz,$magreadingx,$magreadingy,$magreadingz"
 }
 
 close $csvf
