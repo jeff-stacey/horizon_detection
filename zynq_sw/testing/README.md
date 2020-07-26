@@ -43,6 +43,11 @@ script by default does not build the application before running. You should
 pass `-build` when you call this script or run `make all` in
 `../workspace/horizon_detection/Debug/` to build.
 
+If you want to read an image out of memory, the procedure `imread var_name file_name` will do that. It writes to the same binary format produced by the test image generator. On Linux, to turn a file of this format (say `output.bin`) into a viewable png, you can use the ImageMagick command
+```
+convert -depth 16 -size 160x120 gray:output.bin output.png
+```
+
 ## Recurring Problems
 
 There are a couple things that seem to go wrong every once in a while, but
