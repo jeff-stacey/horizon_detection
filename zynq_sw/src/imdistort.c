@@ -23,7 +23,7 @@ SOFTWARE.
 #include <math.h>
 #include "linalg.h"
 
-void remove_barrel_distort_FO(Vec2D imdata[], int data_len, int im_width, int im_height, float dp)
+void remove_barrel_distort_FO(Vec2D imdata[], int data_len, int im_width, int im_height, float pd)
 {
     /*
     First order radial barrel distortion removing
@@ -38,13 +38,13 @@ void remove_barrel_distort_FO(Vec2D imdata[], int data_len, int im_width, int im
     corner_point.x = im_width/2;
     corner_point.y = im_height/2;
 
-    rd = norm(&corner_point);
+    float rd = norm(&corner_point);
 
     Vec2D corner_point_p;
     corner_point_p.x = corner_point.x/(pd+1);
     corner_point_p.y = corner_point.y/(pd+1);
 
-    k = (corner_point.x - corner_point_p.x)/(corner_point.x*(rd*rd));
+    float k = (corner_point.x - corner_point_p.x)/(corner_point.x*(rd*rd));
 
     Vec2D temp_point;
 

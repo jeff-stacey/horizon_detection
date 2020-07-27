@@ -25,7 +25,7 @@ SOFTWARE.
 #define IMDISTORT_HEADER
 
 
-void remove_barrel_distort_FO(Vec2D imdata[], int data_len, int im_width, int im_height, float dp);
+void remove_barrel_distort_FO(Vec2D imdata[], int data_len, int im_width, int im_height, float pd);
 
 
 #endif
