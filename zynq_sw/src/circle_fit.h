@@ -33,4 +33,6 @@ void lineintersect_circle_fit(const Vec2D data[], int len_data, int sample_num, 
 
 void LScircle_fit(Vec2D data[], int len_data, float result[3]);
 
+void circleGOF(Vec2D data[], int len_data, float params[3], float result[], int calc_std);
+
 #endif

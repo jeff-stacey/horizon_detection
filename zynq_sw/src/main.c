@@ -171,6 +171,10 @@ int main() {
     dprintf("nadir:\n");
     print3(nadir);
 
+    float errors[2];
+    circleGOF(edge_points, num_points, circ_params, errors, false);
+    dprintf("errors: %f, %f\n", errors[0], errors[1]);
+
     asm volatile ("end_of_main:");
     return 0;
 }

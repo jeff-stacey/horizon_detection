@@ -233,3 +233,53 @@ void LScircle_fit(Vec2D data[], int len_data, float result[3])
     result[2] = sqrt(result[2] + result[0]*result[0] + result[1]*result[1]);//sqrt(result[2] + pow(result[0],2) + pow(result[1],2));
 
 }
+
+
+void circleGOF(Vec2D data[], int len_data, float params[3], float result[], int calc_std)
+{
+    float mean_sq_error = 0;
+    float mean_abs_error = 0;
+    
+    for(int i=0; i<len_data; i++){
+        Vec2D d;
+        d.x = data[i].x - params[0];
+        d.y = data[i].y - params[1];
+
+        float error = norm(&d) - params[2];
+
+        mean_sq_error += error*error;
+        mean_abs_error += abs(error);
+    }
+
+    mean_sq_error /= len_data;
+    mean_abs_error/= len_data;
+
+    if(calc_std){
+
+        float std_sq_error = 0;
+        float std_abs_error = 0;
+
+        for(int i=0; i<len_data; i++){
+            Vec2D d;
+            d.x = data[i].x - params[0];
+            d.y = data[i].y - params[1];
+
+            float error = norm(&d) - params[2];
+            
+            std_sq_error += (error*error - mean_sq_error)*(error*error - mean_sq_error);
+            std_abs_error += (abs(error) - mean_abs_error)*(abs(error) - mean_abs_error);
+        }
+
+        std_sq_error = sqrtf(std_sq_error/len_data);
+        std_abs_error = sqrtf(std_abs_error/len_data);
+
+        result[0] = mean_sq_error;
+        result[1] = mean_abs_error;
+        result[2] = std_sq_error;
+        result[3] = std_abs_error;
+    }else{
+        result[0] = mean_sq_error;
+        result[1] = mean_abs_error;
+    }
+    
+}
