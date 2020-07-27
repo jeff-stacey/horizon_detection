@@ -26,6 +26,50 @@ proc isnan { x } {
     }
 }
 
+# creates a quaternion dict out of components
+proc build_quat { w x y z } {
+    set q [dict create w $w x $x y $y z $z]
+    return $q
+}
+
+# multiplies two quaternion dicts 
+proc quat_mult { l r } {
+    set q [dict create w [expr [dict get $l w]*[dict get $r w] - [dict get $l x]*[dict get $r x] - [dict get $l y]*[dict get $r y] - [dict get $l z]*[dict get $r z]]]
+    dict set q x [expr [dict get $l w]*[dict get $r x] + [dict get $l x]*[dict get $r w] + [dict get $l y]*[dict get $r z] - [dict get $l z]*[dict get $r y]]
+    dict set q y [expr [dict get $l w]*[dict get $r y] - [dict get $l x]*[dict get $r z] + [dict get $l y]*[dict get $r w] + [dict get $l z]*[dict get $r x]]
+    dict set q z [expr [dict get $l w]*[dict get $r z] + [dict get $l x]*[dict get $r y] - [dict get $l y]*[dict get $r z] + [dict get $l z]*[dict get $r w]]
+    return $q
+}
+
+# inverts a quaternion dict
+proc quat_inv { a } {
+    set q [dict create w [dict get $a w]]
+    dict set q x [expr -1*[dict get $a x]] 
+    dict set q y [expr -1*[dict get $a y]] 
+    dict set q z [expr -1*[dict get $a z]]
+    return $q
+}
+
+# rotates v by r (computes r^{-1}vr)
+proc quat_rotate { r v } {
+    set r_inv [quat_inv $r]
+
+    set t [quat_mult $r $v]
+    set q [quat_mult $t $r_inv]
+
+    return $q
+}
+
+# rotates the vector (vx, vy, vz) by the quaternion (rw, rx, ry, rz)
+proc quat_rotate_vector { rw rx ry rz vx vy vz } {
+    set r [build_quat $rw $rx $ry $rz]
+    set v [build_quat 0 $vx $vy $vz]
+    
+    set q [quat_rotate $r $v]
+
+    return $q
+}
+
 ######################
 # Parse Command-line #
 ######################
@@ -262,6 +306,27 @@ foreach testfile $testfiles {
         puts [format "\tx: %+.10f  %+.10f" $qxref $qxmes]
         puts [format "\ty: %+.10f  %+.10f" $qyref $qymes]
         puts [format "\tz: %+.10f  %+.10f" $qzref $qzmes]
+
+        # rotate the vector pointing north from the base reference frame to the
+        # camera reference frame two ways:
+
+        # first by the reference orientation quaternion
+        set ref_north_q [quat_rotate_vector $qwref $qxref $qyref $qzref 0 1 0]
+        set ref_north_x [dict get $ref_north_q x]
+        set ref_north_y [dict get $ref_north_q y]
+        set ref_north_z [dict get $ref_north_q z]
+        
+        # then by the measured one
+        set mes_north_q [quat_rotate_vector $qwmes $qxmes $qymes $qzmes 0 1 0]
+        set mes_north_x [dict get $mes_north_q x]
+        set mes_north_y [dict get $mes_north_q y]
+        set mes_north_z [dict get $mes_north_q z]
+
+
+        # compute the angle between the two
+        set north_err_angle [expr 180 / $pi * acos($ref_north_x * $mes_north_x + $ref_north_y * $mes_north_y + $ref_north_z * $mes_north_z)]
+        puts [format "\tDetected north is %.4f degrees off" $north_err_angle]
+        
     } else {
         set err_angle NaN
     }

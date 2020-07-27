@@ -172,7 +172,7 @@ void lineintersect_circle_fit(const Vec2D data[], int len_data, int sample_num, 
     }
 
 
-    printf("avg_n: %d\n", avg_n);
+    //printf("avg_n: %d\n", avg_n);
     intersect.x /= avg_n;
     intersect.y /= avg_n;
 
@@ -183,7 +183,7 @@ void lineintersect_circle_fit(const Vec2D data[], int len_data, int sample_num, 
         d.y = data[i].y - intersect.y;
         r += norm(&d);
     }
-    printf("len_data: %d\n", len_data);
+    //printf("len_data: %d\n", len_data);
     r /= len_data;
 
     result[0] = intersect.x;

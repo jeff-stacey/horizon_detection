@@ -82,7 +82,7 @@ int subset_num = 20;
 // RESULTS:
 
 float nadir[3];
-Quaternion orientation = {0,0,0,0};
+Quaternion orientation = {0,1,0,0};
 uint32_t cycles = 0;
 
 int main() {
