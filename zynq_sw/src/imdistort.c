@@ -47,12 +47,51 @@ void remove_barrel_distort_FO(Vec2D imdata[], int data_len, int im_width, int im
     float k = (corner_point.x - corner_point_p.x)/(corner_point.x*(rd*rd));
 
     Vec2D temp_point;
+    float rd = 0;
 
     for(int i=0; i<data_len; i++){
         temp_point.x = imdata[i].x;
         temp_point.y = imdata[i].y;
 
-        imdata[i].x = temp_point.x + temp_point.y*(k*rd*rd);
+        rd = norm(&temp_point);
+
+        imdata[i].x = temp_point.x + temp_point.x*(k*rd*rd);
         imdata[i].y = temp_point.y + temp_point.y*(k*rd*rd);
+    }
+}
+
+void remove_barrel_distort_KO(Vec2D imdata[], const int len_data, const float k_params, const int k_len)
+{
+    /*
+    K-th order barrel distortion
+    k_params => array of k ordered parameters (k1,k2,k3...)
+
+    Higher order parameters affect distortion considerable.
+    Most likely, will only need to use 2 parameters
+    each parameter will be << 1 (most likely on the order of 10^-6 or lower)
+
+    Parameters must be calibrated for the camera
+    */
+    Vec2D temp_point;
+
+    for(int i=0; i<data_len; i++){
+        temp_point.x = imdata[i].x;
+        temp_point.y = imdata[i].y;
+
+        rd = norm(&temp_point);
+
+        temp_point.x = 0;
+        temp_point.y = 0
+
+        for(int j=1; j<=k_len; j++){
+            temp_point.x += k_params[j-1]*powf(rd,2*j);
+            temp_point.y += k_params[j-1]*powf(rd,2*j);
+        }
+
+        temp_point.x *= imdata[i].x;
+        temp_point.y *= imdata[i].y;
+
+        imdata[i].x += temp_point.x;
+        imdata[i].y += temp_point.y;
     }
 }

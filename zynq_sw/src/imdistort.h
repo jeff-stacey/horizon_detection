@@ -27,5 +27,6 @@ SOFTWARE.
 
 void remove_barrel_distort_FO(Vec2D imdata[], int data_len, int im_width, int im_height, float pd);
 
+void remove_barrel_distort_KO(Vec2D imdata[], const int len_data, const float k_params, const int k_len);
 
 #endif
