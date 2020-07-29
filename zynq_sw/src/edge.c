@@ -24,7 +24,9 @@ SOFTWARE.
 
 #include "common.h"
 #include <stdint.h>
-#include "math.h"
+#include <math.h>
+#include <stdlib.h>
+
 
 /*******************
  *    KERNELS      *

@@ -204,10 +204,12 @@ void LScircle_fit(Vec2D data[], int len_data, float result[3])
     float B[3] = {0,0,0};
 
     for(int i=0; i<len_data; i++){
+        // fill the matrix one point at a time
         A[0][0] += data[i].x*data[i].x;
         A[0][1] += data[i].x*data[i].y;
         A[0][2] += data[i].x;
 
+        // the matrix is symmetric, so we can repeat some points
         A[1][0] = A[0][1];
         A[1][1] += data[i].y*data[i].y;
         A[1][2] += data[i].y;
@@ -217,9 +219,9 @@ void LScircle_fit(Vec2D data[], int len_data, float result[3])
         A[2][2] = len_data;
 
         float temp = data[i].x*data[i].x + data[i].y*data[i].y;
-        B[0] += data[i].x*temp;//data[i].x*(pow(data[i].x,2) + pow(data[i].y,2));
-        B[1] += data[i].y*temp;//data[i].y*(pow(data[i].x,2) + pow(data[i].y,2));
-        B[2] += temp;//pow(data[i].x,2) + pow(data[i].y,2);
+        B[0] += data[i].x*temp;
+        B[1] += data[i].y*temp;
+        B[2] += temp;
     }
     
 
@@ -231,8 +233,7 @@ void LScircle_fit(Vec2D data[], int len_data, float result[3])
 
     result[0] = 0.5*result[0];
     result[1] = 0.5*result[1];
-    result[2] = sqrt(result[2] + result[0]*result[0] + result[1]*result[1]);//sqrt(result[2] + pow(result[0],2) + pow(result[1],2));
-
+    result[2] = sqrt(result[2] + result[0]*result[0] + result[1]*result[1]);
 }
 
 
@@ -249,7 +250,7 @@ void circleGOF(Vec2D data[], int len_data, float params[3], float result[], int 
         float error = norm(&d) - params[2];
 
         mean_sq_error += error*error;
-        mean_abs_error += abs(error);
+        mean_abs_error += fabsf(error);
     }
 
     mean_sq_error /= len_data;
@@ -268,7 +269,7 @@ void circleGOF(Vec2D data[], int len_data, float params[3], float result[], int 
             float error = norm(&d) - params[2];
             
             std_sq_error += (error*error - mean_sq_error)*(error*error - mean_sq_error);
-            std_abs_error += (abs(error) - mean_abs_error)*(abs(error) - mean_abs_error);
+            std_abs_error += (fabsf(error) - mean_abs_error)*(fabsf(error) - mean_abs_error);
         }
 
         std_sq_error = sqrtf(std_sq_error/len_data);

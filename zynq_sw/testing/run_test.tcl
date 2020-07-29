@@ -97,7 +97,7 @@ if { $args(csv) eq ""} {
 if { $args(tdir) eq "" } {
     set testfiles $argv
 } else {
-    set testfiles [glob $args(tdir)/*.bin]
+    set testfiles [lsort -dictionary [glob $args(tdir)/*.bin]]
 }
 
 ##########################
@@ -115,7 +115,7 @@ if { $use_csv } {
     # open a .csv file for results
     set csvf [open $args(csv) w]
     # write heading line to the csv
-    puts $csvf "testfile,alg_choice,err_angle,num_points,noise_stdev,visible_atmosphere_height,runtime,qwmes,qxmes,qymes,qzmes,nxmes,nymes,nzmes,qwref,qxref,qyref,qzref,mquatw,mquatx,mquaty,mquatz,altitude,latitude,longitude,noise_seed,nxref,nyref,nzref,magx,magy,magz,magreadingx,magreadingy,magreadingz"
+    puts $csvf "testfile,alg_choice,err_angle,num_points,mean_sq_error,mean_abs_error,circ_cx,circ_cy,circ_r,noise_stdev,visible_atmosphere_height,runtime,qwmes,qxmes,qymes,qzmes,nxmes,nymes,nzmes,qwref,qxref,qyref,qzref,mquatw,mquatx,mquaty,mquatz,altitude,latitude,longitude,noise_seed,nxref,nyref,nzref,magx,magy,magz,magreadingx,magreadingy,magreadingz"
 }
 
 
@@ -190,6 +190,9 @@ bpadd -addr &end_of_main
 
 puts "\tRunning until start of main"
 con -block -timeout 10
+
+# disable the breakpoint at main so we don't hit it when looping back to it
+bpdisable 0
 
 foreach testfile $testfiles {
     puts "Starting test for $testfile"
@@ -272,6 +275,13 @@ foreach testfile $testfiles {
     puts "\tMean squared error: $mean_sq_error"
     puts "\tMean absolute error: $mean_abs_error"
 
+    # grab the circle fit results
+    set circ_cx [vread circ_params[0]]
+    set circ_cy [vread circ_params[1]]
+    set circ_r [vread circ_params[2]]
+
+    puts "\tCircle paramters: x = $circ_cx, y = $circ_cy, r = $circ_r"
+
     puts "\tEdge Detection found $num_points points"
 
     puts "\tNadir Vector:"
@@ -338,7 +348,7 @@ foreach testfile $testfiles {
 
     if { $use_csv } {
         # write results to CSV file
-        puts $csvf "$testfile,$alg_choice,$err_angle,$num_points,$noise_stdev,$visible_atmosphere_height,$runtime,$qwmes,$qxmes,$qymes,$qzmes,$nxmes,$nymes,$nzmes,$qwref,$qxref,$qyref,$qzref,$mquatw,$mquatx,$mquaty,$mquatz,$altitude,$latitude,$longitude,$noise_seed,$nxref,$nyref,$nzref,$magx,$magy,$magz,$magreadingx,$magreadingy,$magreadingz"
+        puts $csvf "$testfile,$alg_choice,$err_angle,$num_points,$mean_sq_error,$mean_abs_error,$circ_cx,$circ_cy,$circ_r,$noise_stdev,$visible_atmosphere_height,$runtime,$qwmes,$qxmes,$qymes,$qzmes,$nxmes,$nymes,$nzmes,$qwref,$qxref,$qyref,$qzref,$mquatw,$mquatx,$mquaty,$mquatz,$altitude,$latitude,$longitude,$noise_seed,$nxref,$nyref,$nzref,$magx,$magy,$magz,$magreadingx,$magreadingy,$magreadingz"
     }
 
 }
