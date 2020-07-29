@@ -162,7 +162,8 @@ int main() {
             lineintersect_circle_fit(edge_points, num_samples, subset_num, circ_params);
         }
 
-        find_nadir(circ_params, nadir);
+        float mag_float[3] = {(float)magnetometer_reading[0], (float)magnetometer_reading[1], (float)magnetometer_reading[2]};
+        find_nadir(circ_params, nadir, mag_float, &orientation);
     }
 
     uint32_t t1 = get_ccount();
