@@ -47,7 +47,7 @@ void remove_barrel_distort_FO(Vec2D imdata[], int data_len, int im_width, int im
     float k = (corner_point.x - corner_point_p.x)/(corner_point.x*(rd*rd));
 
     Vec2D temp_point;
-    float rd = 0;
+    rd = 0;
 
     for(int i=0; i<data_len; i++){
         temp_point.x = imdata[i].x;
@@ -60,7 +60,7 @@ void remove_barrel_distort_FO(Vec2D imdata[], int data_len, int im_width, int im
     }
 }
 
-void remove_barrel_distort_KO(Vec2D imdata[], const int len_data, const float k_params, const int k_len)
+void remove_barrel_distort_KO(Vec2D imdata[], const int len_data, const float k_params[], const int k_len)
 {
     /*
     K-th order barrel distortion
@@ -73,15 +73,16 @@ void remove_barrel_distort_KO(Vec2D imdata[], const int len_data, const float k_
     Parameters must be calibrated for the camera
     */
     Vec2D temp_point;
+    float rd;
 
-    for(int i=0; i<data_len; i++){
+    for(int i=0; i<len_data; i++){
         temp_point.x = imdata[i].x;
         temp_point.y = imdata[i].y;
 
         rd = norm(&temp_point);
 
         temp_point.x = 0;
-        temp_point.y = 0
+        temp_point.y = 0;
 
         for(int j=1; j<=k_len; j++){
             temp_point.x += k_params[j-1]*powf(rd,2*j);

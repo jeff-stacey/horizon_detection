@@ -24,6 +24,7 @@ SOFTWARE.
 #include "line.h"
 
 #include <math.h>
+#include <stdlib.h>
 
 unsigned int nCr(unsigned int n, unsigned int r)
 {

@@ -259,13 +259,18 @@ foreach testfile $testfiles {
     # grab the number of points the edge detection found
     set num_points [vread num_points]
 
-
     # compare values and print results
     if {$alg_choice == 0} {
         puts "\tUsed edge detection and least-squares fit"
     } elseif {$alg_choice == 1} {
         puts "\tUsed edge detection and chord fit"
     }
+
+    # grab the goodness of fit measures
+    set mean_sq_error [vread mean_sq_error]
+    set mean_abs_error [vread mean_abs_error]
+    puts "\tMean squared error: $mean_sq_error"
+    puts "\tMean absolute error: $mean_abs_error"
 
     puts "\tEdge Detection found $num_points points"
 

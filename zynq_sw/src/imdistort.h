@@ -24,6 +24,8 @@ SOFTWARE.
 #ifndef IMDISTORT_HEADER
 #define IMDISTORT_HEADER
 
+#include "linalg.h"
+
 
 void remove_barrel_distort_FO(Vec2D imdata[], int data_len, int im_width, int im_height, float pd);
 
