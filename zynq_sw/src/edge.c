@@ -190,6 +190,16 @@ void doubleThreshold (pixel A[R_DIM][C_DIM], float lowRatio, float highRatio) {
         };
     };
 
+    //Check for empty image based on maximum value
+    //Threshold value determined experimentally 
+    if (max < 14850) {
+        /*
+        Image is empty, set max to large value
+        so that noise does not create false edges
+        */
+        max = 30000;
+    }
+
     // Calculate Thresholds
     pixel highThresh = max*highRatio;
     pixel lowThresh  = highThresh*lowRatio;

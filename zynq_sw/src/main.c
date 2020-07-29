@@ -106,33 +106,33 @@ int main() {
 
     if ((alg_choice == 0) || (alg_choice == 1)) {
         dprintf("\nEdge Detection Testing Start\n");
-        printRowSum(TestImg);
+        //printRowSum(TestImg);
 
         dprintf("\tInitialized all output arrays\n");
 
         conv2dGauss(TestImg, blurred, kernel_gauss);
         dprintf("\tGaussian blurring of test image complete\n");
-        printRowSum(blurred);
+        //printRowSum(blurred);
 
         conv2d(blurred, edge_x, kernel_x);
         dprintf("\tx-direction 2D-convolution complete\n");
-        printRowSum(edge_x);
+        //printRowSum(edge_x);
 
         conv2d(blurred, edge_y, kernel_y);
         dprintf("\ty-direction 2D-convolution complete\n");
-        printRowSum(edge_y);
+        //printRowSum(edge_y);
 
         imgHypot(edge_x, edge_y, grad);
         dprintf("\tObtained gradient magnitude map\n");
-        printRowSum(grad);
+        //printRowSum(grad);
 
         imgTheta(edge_x, edge_y, theta);
         dprintf("\tObtained gradient phase map\n\r");
-        printRowSumTheta(theta);
+        //printRowSumTheta(theta);
 
         nonMaxSuppression(suppressed, grad, theta);
         dprintf("\tNon-Max suppression complete\n\r");
-        printRowSum(suppressed);
+        //printRowSum(suppressed);
 
         doubleThreshold(suppressed, lowRatio, highRatio);
         dprintf("\tDouble Thresholding complete\n");
@@ -145,7 +145,7 @@ int main() {
         // Current Method of storing Edge_Points
         num_points = edge2Arr(suppressed,edge_points);
         dprintf("\tEdges Stored in \"edge_points\" array\n\r");
-        edgePrint(edge_points,num_points);
+        //edgePrint(edge_points,num_points);
 
         dprintf("Edge Detection Complete\n");
 
