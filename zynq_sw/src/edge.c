@@ -24,7 +24,9 @@ SOFTWARE.
 
 #include "common.h"
 #include <stdint.h>
-#include "math.h"
+#include <math.h>
+#include <stdlib.h>
+
 
 /*******************
  *    KERNELS      *
@@ -79,10 +81,7 @@ void conv2d(pixel A[R_DIM][C_DIM], pixel C[R_DIM][C_DIM], int16_t K[K_DIM][K_DIM
                     sum += A[i+a][j+b]*K[a+1][b+1];
                 }
             }
-            /*Sum Thresholding*/
-            if (sum < 0) sum = 0;
-            if (sum > 0x3fff) sum = 0x3fff;
-            C[i][j] = (pixel)sum;
+            C[i][j] = (pixel)abs(sum);
         }
     }
 };

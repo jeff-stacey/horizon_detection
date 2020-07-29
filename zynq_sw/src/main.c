@@ -82,8 +82,10 @@ int subset_num = 20;
 // RESULTS:
 
 float nadir[3];
-Quaternion orientation = {0,0,0,0};
+Quaternion orientation = {0,1,0,0};
 uint32_t cycles = 0;
+float mean_sq_error;
+float mean_abs_error;
 
 int main() {
 
@@ -171,6 +173,12 @@ int main() {
     //print results
     dprintf("nadir:\n");
     print3(nadir);
+
+    float errors[2];
+    circleGOF(edge_points, num_points, circ_params, errors, 0);
+    mean_sq_error = errors[0];
+    mean_abs_error = errors[1];
+    dprintf("errors: %f, %f\n", mean_sq_error, mean_abs_error);
 
     asm volatile ("end_of_main:");
     return 0;

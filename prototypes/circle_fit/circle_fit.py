@@ -161,3 +161,52 @@ def LSfit(data):
     r = np.sqrt(ans[2] + (0.5*ans[0])**2 + (0.5*ans[1])**2)
     
     return centre, r
+
+
+
+def circleGOF(data, params, calc_std=False):
+    
+    mean_sq_error = 0
+    mean_abs_error = 0
+    
+    centre = np.array([params[0], params[1]])
+    r = params[2]
+    
+    for i in range(len(data)):
+        
+        x = data[i]
+        
+        error = (np.linalg.norm(x-centre) - r)
+        
+        mean_sq_error += error**2
+        mean_abs_error += abs(error)
+    
+    mean_sq_error /= len(data)
+    mean_abs_error /= len(data)
+        
+    if calc_std:
+        
+        std_sq_error = 0
+        std_abs_error = 0
+        
+        for i in range(len(data)):
+            
+            x = data[i]
+        
+            error = (np.linalg.norm(x-centre) - r)
+            
+            std_sq_error += (error**2 - mean_sq_error)**2
+            std_abs_error += (abs(error) - mean_sq_error)**2
+            
+        std_sq_error = np.sqrt(std_sq_error/len(data))
+        std_abs_error = np.sqrt(std_abs_error/len(data))
+        
+        return mean_sq_error, std_sq_error, mean_abs_error, std_abs_error
+    
+    else:
+        
+        return mean_sq_error, mean_abs_error
+        
+        
+        
+        

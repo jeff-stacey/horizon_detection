@@ -20,19 +20,15 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-#ifndef CIRCLE_FIT_HEADER
-#define CIRCLE_FIT_HEADER
+
+#ifndef IMDISTORT_HEADER
+#define IMDISTORT_HEADER
 
 #include "linalg.h"
 
-unsigned int nCr(unsigned int n, unsigned int r);
 
-void permutations2(Vec2D pairs[], int len_pairs, const Vec2D data[], int len_data);
+void remove_barrel_distort_FO(Vec2D imdata[], int data_len, int im_width, int im_height, float pd);
 
-void lineintersect_circle_fit(const Vec2D data[], int len_data, int sample_num, float result[3]);
-
-void LScircle_fit(Vec2D data[], int len_data, float result[3]);
-
-void circleGOF(Vec2D data[], int len_data, float params[3], float result[], int calc_std);
+void remove_barrel_distort_KO(Vec2D imdata[], const int len_data, const float k_params, const int k_len);
 
 #endif

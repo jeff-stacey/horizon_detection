@@ -93,7 +93,7 @@ for im, da in zip(images, metadata):
     
     test_results.append({'image':im, 'nadir_actual_x':nad[0], 'nadir_actual_y':nad[1], 'nadir_actual_z':nad[2], 'nadir_predicted_x':nadir[0], 'nadir_predicted_y':nadir[1], 'nadir_predicted_z':nadir[2], 'error':np.linalg.norm(nadir-nad)/np.linalg.norm(nad), 'vert_x': vert[0], 'vert_y': vert[1], 'above_horizon': not (r > np.linalg.norm(np.zeros(2) - centre))})
     
-    break
+    print(circleGOF(data, [centre[0], centre[1], r], calc_std=False))
     
 test_results = pd.DataFrame(test_results)
 
