@@ -89,12 +89,12 @@ void randomize_state(SimulationState* state, FuzzOptions fuzz)
     if (fuzz.latitude)
     {
         float t = random_float();
-        state->latitude = -180.0f * t + 180.0f * (1.0f - t);
+        state->latitude = -90.0f * t + 90.0f * (1.0f - t);
     }
     if (fuzz.longitude)
     {
         float t = random_float();
-        state->longitude = -90.0f * t + 90.0f * (1.0f - t);
+        state->longitude = -180.0f * t + 180.0f * (1.0f - t);
     }
     if (fuzz.noise_seed)
     {
