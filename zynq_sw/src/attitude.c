@@ -22,6 +22,7 @@ SOFTWARE.
 
 #include "attitude.h"
 #include "linalg.h"
+#include "common.h"
 
 #include <math.h>
 
@@ -103,16 +104,17 @@ void find_yaw_quat(const float mag[3], const Quaternion* R, const Quaternion* T,
     float nadir[3] = {0.0f, 0.0f, -1.0f};
     quaternion_rotate(R, nadir);
 
-    float field_strength = norm3(mag);
-
     // Project the magnetometer reading onto the plane normal
     // to the nadir vector. This is the direction we are treating
     // as north.
+    float mag_nadir_component = nadir[0]*mag[0] + nadir[1]*mag[1] + nadir[2]*mag[2];
     float north[3] = {
-        mag[0] - nadir[0]*mag[0] / field_strength,
-        mag[1] - nadir[1]*mag[1] / field_strength,
-        mag[2] - nadir[2]*mag[2] / field_strength
+        mag[0] - mag_nadir_component*nadir[0],
+        mag[1] - mag_nadir_component*nadir[1],
+        mag[2] - mag_nadir_component*nadir[2]
     };
+     
+    // TODO: check for zero or very small north vector
 
     // Normalize the north vector
     float north_norm = norm3(north);
@@ -134,37 +136,17 @@ void find_yaw_quat(const float mag[3], const Quaternion* R, const Quaternion* T,
         theta = -theta;
     }
 
+    dprintf("north z %f\n", north[2]);
+    dprintf("north angle %f\n", theta);
+
     result->w = cosf(0.5f * theta);
     result->x = 0.0f;
     result->y = 0.0f;
     result->z = sinf(0.5f * theta);
-
 }
 
-void find_nadir(const float results[3], float nadir[3])
+void find_nadir(const float results[3], float nadir[3], float mag[3], Quaternion* overall_transformation)
 {
-#if 0
-    //result is an array containing circle parameters (x_0,y_0,r)
-    float theta_x = -1*find_pitch(results);
-    float theta_z = -1*find_roll(results);
-
-    float Rx[3][3] = {{1, 0, 0}, {0, cos(theta_x), -1*sin(theta_x)}, {0, sin(theta_x), cos(theta_x)}};
-    float Rz[3][3] = {{cos(theta_z), -1*sin(theta_z), 0}, {sin(theta_z), cos(theta_z), 0}, {0, 0, 1}};
-
-    float nad[3] = {0, 0, -1};
-
-
-    //rotate nadir by theta_x about x
-    multiply33by31(Rx, nad, nadir);
-
-    //rotate nadir by theta_z about z
-    multiply33by31(Rz, nadir, nad);
-
-
-    nadir[0] = nad[0];
-    nadir[1] = nad[1];
-    nadir[2] = nad[2];
-#else
     Quaternion roll_quat;
     Quaternion pitch_quat;
 
@@ -175,12 +157,21 @@ void find_nadir(const float results[3], float nadir[3])
     pitch_quat.y *= -1.0f;
     pitch_quat.z *= -1.0f;
 
-    Quaternion overall_transformation = quaternion_multiply(&roll_quat, &pitch_quat);
+    *overall_transformation = quaternion_multiply(&roll_quat, &pitch_quat);
 
     nadir[0] = 0.0f;
     nadir[1] = 0.0f;
     nadir[2] = -1.0f;
 
-    quaternion_rotate(&overall_transformation, nadir);
-#endif
+    quaternion_rotate(overall_transformation, nadir);
+
+    Quaternion identity;
+    identity.w = 1.0f;
+    identity.x = 0.0f;
+    identity.y = 0.0f;
+    identity.z = 0.0f;
+    Quaternion yaw_quat;
+    find_yaw_quat(mag, overall_transformation, &identity, &yaw_quat);
+    //yaw_quat = quaternion_inverse(&yaw_quat);
+    *overall_transformation = quaternion_multiply(overall_transformation, &yaw_quat);
 }

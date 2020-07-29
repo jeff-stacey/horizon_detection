@@ -31,6 +31,6 @@ void find_pitch_quat(const float circle_params[3], Quaternion* result);
 
 void find_yaw_quat(const float mag[3], const Quaternion* R, const Quaternion* T, Quaternion* result);
 
-void find_nadir(const float results[3], float nadir[3]);
+void find_nadir(const float results[3], float nadir[3], float mag[3], Quaternion* overall_transformation);
 
 #endif
