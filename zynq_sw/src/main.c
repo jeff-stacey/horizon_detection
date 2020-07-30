@@ -190,9 +190,9 @@ int main() {
             
             // The magnetometer transformation is given as an affine matrix, but only the rotation is needed.
             float mag_rotation[3][3] = {
-                {magnetometer_transformation[0][0], magnetometer_transformation[0][1], magnetometer_transformation[0][2]},
-                {magnetometer_transformation[1][0], magnetometer_transformation[1][1], magnetometer_transformation[1][2]},
-                {magnetometer_transformation[2][0], magnetometer_transformation[2][1], magnetometer_transformation[2][2]}
+                {magnetometer_transformation[0], magnetometer_transformation[1], magnetometer_transformation[2]},
+                {magnetometer_transformation[4], magnetometer_transformation[5], magnetometer_transformation[6]},
+                {magnetometer_transformation[8], magnetometer_transformation[9], magnetometer_transformation[10]}
             };
             multiply33by31(mag_rotation, mag_float, mag_float);
 
