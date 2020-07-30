@@ -35,6 +35,7 @@
 
 #define DEFAULT_VISIBLE_ATMOSPHERE_HEIGHT 25.0
 
+#define MAX_LENS_DIST 0.7
 
 
 /********************

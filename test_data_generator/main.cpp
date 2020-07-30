@@ -391,6 +391,14 @@ void start_gui(RenderState render_state, SimulationState state, FuzzOptions fuzz
 
                 ImGui::TreePop();
             }
+
+            if (ImGui::TreeNode("Distortion"))
+            {
+                ImGui::SliderFloat("K1", &render_state.K1, -MAX_LENS_DIST, MAX_LENS_DIST, "%6f");
+                ImGui::SliderFloat("K2", &render_state.K2, -MAX_LENS_DIST, MAX_LENS_DIST, "%6f");
+
+                ImGui::TreePop();
+            }
         }
 
         if (!typing)
