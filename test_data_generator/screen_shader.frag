@@ -22,17 +22,19 @@ void main()
     const float width = 1.0859114f;
     float height = width * screen_height / screen_width;
 
-    // Direction of frag in space
-    vec3 dir = vec3((gl_FragCoord.x / screen_width - 0.5f) * width,
-                    (gl_FragCoord.y / screen_height - 0.5f) * height,
-                    -1.0f);
-    
-    // Add distortion to dir (just need to distory xy coordinates)
+    vec2 frag_coord_centred = gl_FragCoord.xy - 0.5f*vec2(screen_width, screen_height);
+
+    // Add lens distortion to frag coord
     {
-        float r_sq = dir.x*dir.x + dir.y*dir.y;
-        dir.x *= 1.0f / (1.0f + K1*r_sq + K2*r_sq*r_sq);
-        dir.x *= 1.0f / (1.0f + K1*r_sq + K2*r_sq*r_sq);
+        float r_sq = frag_coord_centred.x*frag_coord_centred.x
+            + frag_coord_centred.y*frag_coord_centred.y;
+
+        float screen_radius_sq = screen_width*screen_width + screen_height*screen_height;
+
+        frag_coord_centred *= 1.0f + (K1*r_sq + K2*r_sq*r_sq) / screen_radius_sq;
     }
+
+    vec3 dir = vec3(frag_coord_centred * (width / screen_width), -1.0f);
 
     vec3 color = vec3(0.0f, 0.0f, 0.0f);
     if (dot(nadir, normalize(dir)) > alpha)

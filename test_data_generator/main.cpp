@@ -390,10 +390,11 @@ void start_gui(RenderState render_state, SimulationState state, FuzzOptions fuzz
                 ImGui::TreePop();
             }
 
-            if (ImGui::TreeNode("Distortion"))
+            if (ImGui::TreeNode("Lens Distortion"))
             {
-                ImGui::SliderFloat("K1", &render_state.K1, -MAX_LENS_DIST, MAX_LENS_DIST, "%6f");
-                ImGui::SliderFloat("K2", &render_state.K2, -MAX_LENS_DIST, MAX_LENS_DIST, "%6f");
+                ImGui::TextWrapped("First and second order coefficients of the Brown-Conrady distortion model, normalized by screen size (i.e. distance to corner is 1). Positive means barrel distortion. Expected K1 is 0.15, expected K2 is 0");
+                ImGui::InputFloat("K1", &state.K1, 0.0f, 0.0f, "%.8f");
+                ImGui::InputFloat("K2", &state.K2, 0.0f, 0.0f, "%.8f");
 
                 ImGui::TreePop();
             }

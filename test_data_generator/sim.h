@@ -31,11 +31,14 @@ struct SimulationState
     } magnetometer;   // in rotated reference frame
 
     // This is generated from the magnetometer_reference_frame quaternion
-    // This could be an input, but the test data generator already takes
-    // a quaternion as input and I don't want to break the format.
     float magnetometer_transformation[16];
 
     Vec3 mag_noise;
+
+
+    // Inputs: Lens distortion coefficients
+    float K1 = DEFAULT_LENS_DIST;
+    float K2 = DEFAULT_LENS_DIST;
 
     bool load_state(const char* filename);
     void save_state(const char* filename);

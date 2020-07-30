@@ -20,10 +20,6 @@ struct RenderState
     Mesh screen_mesh;
     GLint screen_shader = -1;
 
-    // Distortion coefficients
-    float K1 = 0.0f;
-    float K2 = 0.0f;
-
     GLuint noise_texture = -1;
     float* noise = nullptr;
 };
