@@ -25,11 +25,10 @@ SOFTWARE.
 
 #include "linalg.h"
 
+// The angles roll, pitch and yaw correspond to the proper Euler angles gamma, beta and alpha respectively.
 void find_roll_quat(const float circle_params[3], Quaternion* result);
-
 void find_pitch_quat(const float circle_params[3], float altitude, Quaternion* result);
-
-void find_yaw_quat(const float mag[3], const Quaternion* R, const Quaternion* T, Quaternion* result);
+void find_yaw_quat(const float mag[3], const Quaternion* R, Quaternion* result);
 
 void find_nadir(const float results[3], float altitude, float nadir[3], float mag[3], Quaternion* overall_transformation);
 

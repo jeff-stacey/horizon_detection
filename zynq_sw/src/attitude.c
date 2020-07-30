@@ -92,7 +92,7 @@ void find_pitch_quat(const float circle_params[3], float altitude, Quaternion* r
     result->z = 0.0f;
 }
 
-void find_yaw_quat(const float mag[3], const Quaternion* R, const Quaternion* T, Quaternion* result)
+void find_yaw_quat(const float mag[3], const Quaternion* R, Quaternion* result)
 {
     /*
     mag is the 3 dimensional magnetometer vector

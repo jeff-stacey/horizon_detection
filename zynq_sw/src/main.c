@@ -185,7 +185,17 @@ int main() {
         }
 
         if (circ_params[2] > min_circle_radius) {
+            // Magnetometer reading in homogenous coordinates
             float mag_float[3] = {(float)magnetometer_reading[0], (float)magnetometer_reading[1], (float)magnetometer_reading[2]};
+            
+            // The magnetometer transformation is given as an affine matrix, but only the rotation is needed.
+            float mag_rotation[3][3] = {
+                {magnetometer_transformation[0][0], magnetometer_transformation[0][1], magnetometer_transformation[0][2]},
+                {magnetometer_transformation[1][0], magnetometer_transformation[1][1], magnetometer_transformation[1][2]},
+                {magnetometer_transformation[2][0], magnetometer_transformation[2][1], magnetometer_transformation[2][2]}
+            };
+            multiply33by31(mag_rotation, mag_float, mag_float);
+
             dprintf("Computing nadir vector\n");
             find_nadir(circ_params, altitude, nadir, mag_float, &orientation);
             reject = 0;

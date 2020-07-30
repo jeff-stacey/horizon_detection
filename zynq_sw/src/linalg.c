@@ -65,18 +65,22 @@ void inv3(float A[3][3])
     }
 }
 
+
 void multiply33by31(const float A[3][3], const float v[3], float u[3])
 {
-    //multiplay 3x3 matrix A with 3x1 vector v and store in vector u
+    //multiply 3x3 matrix A with 3x1 vector v and store in vector u
 
     //zero u
     for(int i=0; i<3; i++){
         u[i] = 0;
     }
 
+    // Copy v to avoid address aliasing issues
+    float v_copy[3] = {v[0], v[1], v[2]};
+
     for(int i=0; i<3; i++){
         for(int j=0; j<3; j++){
-            u[i] += A[i][j]*v[j];
+            u[i] += A[i][j]*v_copy[j];
         }
     }
 

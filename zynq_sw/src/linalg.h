@@ -51,6 +51,7 @@ float det2(float A[2][2]);
 
 void inv3(float A[3][3]);
 
+// Note: This works fine if v and u are aliases
 void multiply33by31(const float A[3][3], const float v[3], float u[3]);
 
 void print33(const float A[3][3]);
