@@ -218,6 +218,9 @@ foreach testfile $testfiles {
         print -s magnetometer_transformation[$i] [lindex $mag_trans $i]
     }
 
+    # set the altitude in memory
+    print -s altitude $altitude
+
     # write the magnetometer reading into memory
     print -s magnetometer_reading[0] $magreadingx
     print -s magnetometer_reading[1] $magreadingy
