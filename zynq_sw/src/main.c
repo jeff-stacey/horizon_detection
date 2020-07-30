@@ -60,13 +60,16 @@ int alg_choice = 0;
 // If the edge detection only finds a few points, they're likely noise or the
 // horizon is barely visible - fitting to these points can give wildly
 // inaccurate results. Below this threshold, we don't estimate an orientation.
-int min_required_points = 10;
+int min_required_points = 20;
 
 // If the radius of the circle we fit is smaller than it should be, something
 // has probably gone wrong - maybe we're fitting to noise, maybe we're fitting
 // to a tiny part of the horizon on the side of the image. Either way the
 // result is probably wrong.
 float min_circle_radius = 150.0;
+
+// Correct for (up to second order) barrel distortion in the images.
+int correct_barrel_dist = 1;
 
 // Edge detection parameters
 float lowRatio = 0.5;
@@ -87,7 +90,6 @@ pixel suppressed[R_DIM][C_DIM]; // Create Output for non-max suppression step
 uint16_t num_points = 0;
 Vec2D edge_points[R_DIM*C_DIM];   // Create output array for number of edges
 
-int correct_barrel_dist = 0;
 
 // Circle fitting intermediate products
 // array containing (x_0, y_0, r) circle parameters

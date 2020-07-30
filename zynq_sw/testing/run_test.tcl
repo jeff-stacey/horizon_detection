@@ -115,7 +115,7 @@ if { $use_csv } {
     # open a .csv file for results
     set csvf [open $args(csv) w]
     # write heading line to the csv
-    puts $csvf "testfile,alg_choice,err_angle,reject,num_points,mean_sq_error,mean_abs_error,circ_cx,circ_cy,circ_r,noise_stdev,visible_atmosphere_height,runtime,qwmes,qxmes,qymes,qzmes,nxmes,nymes,nzmes,qwref,qxref,qyref,qzref,mquatw,mquatx,mquaty,mquatz,altitude,latitude,longitude,noise_seed,nxref,nyref,nzref,magx,magy,magz,magreadingx,magreadingy,magreadingz,north_err_angle"
+    puts $csvf "testfile,alg_choice,dist_corr,err_angle,reject,num_points,mean_sq_error,mean_abs_error,circ_cx,circ_cy,circ_r,noise_stdev,visible_atmosphere_height,runtime,qwmes,qxmes,qymes,qzmes,nxmes,nymes,nzmes,qwref,qxref,qyref,qzref,mquatw,mquatx,mquaty,mquatz,altitude,latitude,longitude,noise_seed,nxref,nyref,nzref,magx,magy,magz,magreadingx,magreadingy,magreadingz,north_err_angle"
 }
 
 
@@ -286,6 +286,9 @@ foreach testfile $testfiles {
     set circ_cy [vread circ_params[1]]
     set circ_r [vread circ_params[2]]
 
+    # grab whether barrel distortion was corrected
+    set dist_corr [vread correct_barrel_dist]
+
     puts "\tCircle paramters: x = $circ_cx, y = $circ_cy, r = $circ_r"
 
     puts "\tEdge Detection found $num_points points"
@@ -327,7 +330,12 @@ foreach testfile $testfiles {
     } else {
         if { $nancount == 0 } {
                 set pi [expr acos(-1.0)]
-                set err_angle [expr 180 / $pi * acos($nxref * $nxmes + $nyref * $nymes + $nzref * $nzmes)]
+                set dot_prod_r [expr $nxref * $nxmes + $nyref * $nymes + $nzref * $nzmes]
+                if {$dot_prod_r > 1} {
+                    # clamp to 1
+                    set dot_prod_r 1
+                }
+                set err_angle [expr 180 / $pi * acos($dot_prod_r)]
                 puts [format "\tDetected nadir vector is off by %.4f degrees" $err_angle]
 
                 puts "\tOutput Quaternion"
@@ -369,7 +377,7 @@ foreach testfile $testfiles {
 
     if { $use_csv } {
         # write results to CSV file
-        puts $csvf "$testfile,$alg_choice,$err_angle,$reject,$num_points,$mean_sq_error,$mean_abs_error,$circ_cx,$circ_cy,$circ_r,$noise_stdev,$visible_atmosphere_height,$runtime,$qwmes,$qxmes,$qymes,$qzmes,$nxmes,$nymes,$nzmes,$qwref,$qxref,$qyref,$qzref,$mquatw,$mquatx,$mquaty,$mquatz,$altitude,$latitude,$longitude,$noise_seed,$nxref,$nyref,$nzref,$magx,$magy,$magz,$magreadingx,$magreadingy,$magreadingz,$north_err_angle"
+        puts $csvf "$testfile,$alg_choice,$dist_corr,$err_angle,$reject,$num_points,$mean_sq_error,$mean_abs_error,$circ_cx,$circ_cy,$circ_r,$noise_stdev,$visible_atmosphere_height,$runtime,$qwmes,$qxmes,$qymes,$qzmes,$nxmes,$nymes,$nzmes,$qwref,$qxref,$qyref,$qzref,$mquatw,$mquatx,$mquaty,$mquatz,$altitude,$latitude,$longitude,$noise_seed,$nxref,$nyref,$nzref,$magx,$magy,$magz,$magreadingx,$magreadingy,$magreadingz,$north_err_angle"
     }
 
 }
