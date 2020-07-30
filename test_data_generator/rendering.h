@@ -29,4 +29,4 @@ void render_frame(RenderState render_state, SimulationState state, uint32_t widt
 void export_image(const char* filename, RenderState render_state, SimulationState state);
 void export_binary(const char* filename, RenderState render_state, SimulationState state);
 
-void generate_noise(float seed, float stdev, RenderState* render_state);
+void generate_noise(int seed, float stdev, RenderState* render_state);

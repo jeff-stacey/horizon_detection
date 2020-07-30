@@ -195,7 +195,7 @@ void export_binary(const char* filename, RenderState render_state, SimulationSta
     fclose(fd);
 }
 
-void generate_noise(float seed, float stdev, RenderState* render_state)
+void generate_noise(int seed, float stdev, RenderState* render_state)
 {
     std::default_random_engine random_engine(seed);
     std::normal_distribution<float> normal_dist(0.0f, stdev);

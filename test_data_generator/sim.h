@@ -15,7 +15,7 @@ struct SimulationState
     float latitude = DEFAULT_LATITUDE;
     float longitude = DEFAULT_LONGITUDE;
 
-    float noise_seed = DEFAULT_NOISE_SEED;
+    int noise_seed = DEFAULT_NOISE_SEED;
     float noise_stdev = DEFAULT_NOISE_STDEV;
 
     float visible_atmosphere_height = DEFAULT_VISIBLE_ATMOSPHERE_HEIGHT;
@@ -34,6 +34,8 @@ struct SimulationState
     // This could be an input, but the test data generator already takes
     // a quaternion as input and I don't want to break the format.
     float magnetometer_transformation[16];
+
+    Vec3 mag_noise;
 
     bool load_state(const char* filename);
     void save_state(const char* filename);

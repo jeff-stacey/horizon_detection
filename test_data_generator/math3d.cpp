@@ -127,3 +127,8 @@ Vec3 operator*(float lhs, const Vec3& rhs)
 {
     return Vec3(lhs * rhs.x, lhs * rhs.y, lhs * rhs.z);
 }
+
+Vec3 operator+(const Vec3& lhs, const Vec3& rhs)
+{
+    return Vec3(lhs.x + rhs.x, lhs.y + rhs.y, lhs.z + rhs.z);
+}
