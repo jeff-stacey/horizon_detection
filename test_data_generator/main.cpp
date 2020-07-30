@@ -292,7 +292,7 @@ void compute_outputs(SimulationState* state, GeomagnetismData geomag)
 
     state->magnetic_field = Vec3(magnetic_field.Y, magnetic_field.X, -magnetic_field.Z);
     state->magnetic_field = state->camera.inverse().apply_rotation(state->magnetic_field);
-    Vec3 magnetometer = (0.001f / MAGNETIC_FIELD_SENSITIVITY) * state->magnetometer_reference_frame.apply_rotation(state->magnetic_field) + state->mag_noise;
+    Vec3 magnetometer = (0.001f / MAGNETIC_FIELD_SENSITIVITY) * state->magnetometer_reference_frame.inverse().apply_rotation(state->magnetic_field) + state->mag_noise;
     // convert magnetometer to int16_t
     state->magnetometer.x = static_cast<int16_t>(roundf(magnetometer.x));
     state->magnetometer.y = static_cast<int16_t>(roundf(magnetometer.y));
