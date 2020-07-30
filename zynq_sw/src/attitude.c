@@ -164,13 +164,8 @@ void find_nadir(const float results[3], float altitude, float nadir[3], float ma
 
     quaternion_rotate(overall_transformation, nadir);
 
-    Quaternion identity;
-    identity.w = 1.0f;
-    identity.x = 0.0f;
-    identity.y = 0.0f;
-    identity.z = 0.0f;
     Quaternion yaw_quat;
-    find_yaw_quat(mag, overall_transformation, &identity, &yaw_quat);
+    find_yaw_quat(mag, overall_transformation, &yaw_quat);
     //yaw_quat = quaternion_inverse(&yaw_quat);
     *overall_transformation = quaternion_multiply(overall_transformation, &yaw_quat);
 }
