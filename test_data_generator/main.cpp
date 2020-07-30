@@ -246,9 +246,7 @@ struct GeomagnetismData
 void compute_outputs(SimulationState* state, GeomagnetismData geomag)
 {
     // calculate nadir vector
-    float camera_matrix[9];
-    state->camera.inverse().to_matrix(camera_matrix);
-    state->nadir = Vec3(-camera_matrix[2], -camera_matrix[5], -camera_matrix[8]);
+    state->nadir = state->camera.inverse().apply_rotation(Vec3(0.0f, 0.0f, -1.0f));
 
     // Calclate magnetic field
     MAGtype_CoordSpherical spherical_coord;
@@ -263,7 +261,7 @@ void compute_outputs(SimulationState* state, GeomagnetismData geomag)
     MAG_Geomag(geomag.ellipsoid, spherical_coord, geo_coord, geomag.magnetic_models[0], &magnetic_field);
 
     state->magnetic_field = Vec3(magnetic_field.Y, magnetic_field.X, -magnetic_field.Z);
-    state->magnetic_field = state->camera.apply_rotation(state->magnetic_field);
+    state->magnetic_field = state->camera.inverse().apply_rotation(state->magnetic_field);
     Vec3 magnetometer = (0.001f / MAGNETIC_FIELD_SENSITIVITY) * state->magnetometer_reference_frame.apply_rotation(state->magnetic_field);
     // convert magnetometer to int16_t
     state->magnetometer.x = static_cast<int16_t>(roundf(magnetometer.x));

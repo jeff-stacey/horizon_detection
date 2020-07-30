@@ -78,7 +78,7 @@ Vec3 Quaternion::apply_rotation(const Vec3& x)
     x_quat.y = x.y;
     x_quat.z = x.z;
 
-    Quaternion result = (*this).inverse() * x_quat * (*this);
+    Quaternion result = (*this) * x_quat * (*this).inverse();
     return Vec3(result.x, result.y, result.z);
 }
 
