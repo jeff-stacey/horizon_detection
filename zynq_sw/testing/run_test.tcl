@@ -37,7 +37,7 @@ proc quat_mult { l r } {
     set q [dict create w [expr [dict get $l w]*[dict get $r w] - [dict get $l x]*[dict get $r x] - [dict get $l y]*[dict get $r y] - [dict get $l z]*[dict get $r z]]]
     dict set q x [expr [dict get $l w]*[dict get $r x] + [dict get $l x]*[dict get $r w] + [dict get $l y]*[dict get $r z] - [dict get $l z]*[dict get $r y]]
     dict set q y [expr [dict get $l w]*[dict get $r y] - [dict get $l x]*[dict get $r z] + [dict get $l y]*[dict get $r w] + [dict get $l z]*[dict get $r x]]
-    dict set q z [expr [dict get $l w]*[dict get $r z] + [dict get $l x]*[dict get $r y] - [dict get $l y]*[dict get $r z] + [dict get $l z]*[dict get $r w]]
+    dict set q z [expr [dict get $l w]*[dict get $r z] + [dict get $l x]*[dict get $r y] - [dict get $l y]*[dict get $r x] + [dict get $l z]*[dict get $r w]]
     return $q
 }
 
@@ -50,7 +50,7 @@ proc quat_inv { a } {
     return $q
 }
 
-# rotates v by r (computes r^{-1}vr)
+# rotates v by r (computes rvr^{-1})
 proc quat_rotate { r v } {
     set r_inv [quat_inv $r]
 
@@ -115,7 +115,7 @@ if { $use_csv } {
     # open a .csv file for results
     set csvf [open $args(csv) w]
     # write heading line to the csv
-    puts $csvf "testfile,alg_choice,err_angle,reject,num_points,mean_sq_error,mean_abs_error,circ_cx,circ_cy,circ_r,noise_stdev,visible_atmosphere_height,runtime,qwmes,qxmes,qymes,qzmes,nxmes,nymes,nzmes,qwref,qxref,qyref,qzref,mquatw,mquatx,mquaty,mquatz,altitude,latitude,longitude,noise_seed,nxref,nyref,nzref,magx,magy,magz,magreadingx,magreadingy,magreadingz"
+    puts $csvf "testfile,alg_choice,err_angle,reject,num_points,mean_sq_error,mean_abs_error,circ_cx,circ_cy,circ_r,noise_stdev,visible_atmosphere_height,runtime,qwmes,qxmes,qymes,qzmes,nxmes,nymes,nzmes,qwref,qxref,qyref,qzref,mquatw,mquatx,mquaty,mquatz,altitude,latitude,longitude,noise_seed,nxref,nyref,nzref,magx,magy,magz,magreadingx,magreadingy,magreadingz,north_err_angle"
 }
 
 
@@ -337,10 +337,12 @@ foreach testfile $testfiles {
                 # camera reference frame two ways:
 
                 # first by the reference orientation quaternion
-                set ref_north_q [quat_rotate_vector $qwref $qxref $qyref $qzref 0 1 0]
+                set ref_north_q [quat_rotate_vector $qwref [expr -$qxref] [expr -$qyref] [expr -$qzref] 0 1 0]
                 set ref_north_x [dict get $ref_north_q x]
                 set ref_north_y [dict get $ref_north_q y]
                 set ref_north_z [dict get $ref_north_q z]
+
+                puts [expr $ref_north_x*$ref_north_x + $ref_north_z*$ref_north_z + $ref_north_y*$ref_north_y]
                 
                 # then by the measured one
                 set mes_north_q [quat_rotate_vector $qwmes $qxmes $qymes $qzmes 0 1 0]
@@ -348,9 +350,15 @@ foreach testfile $testfiles {
                 set mes_north_y [dict get $mes_north_q y]
                 set mes_north_z [dict get $mes_north_q z]
 
+                set dot_prod [expr $ref_north_x*$mes_north_x + $ref_north_z*$mes_north_z + $ref_north_y*$mes_north_y]
+
+                if { $dot_prod > 1 } {
+                    puts "Dot product of north vectors is $dot_prod"
+                    set dot_prod 1
+                }
 
                 # compute the angle between the two
-                set north_err_angle [expr 180 / $pi * acos($ref_north_x * $mes_north_x + $ref_north_y * $mes_north_y + $ref_north_z * $mes_north_z)]
+                set north_err_angle [expr 180 / $pi * acos($dot_prod)]
                 puts [format "\tDetected north is %.4f degrees off" $north_err_angle]
         } else {
             error "One or more components of the nadir vector is NaN - something has gone wrong"
@@ -359,7 +367,7 @@ foreach testfile $testfiles {
 
     if { $use_csv } {
         # write results to CSV file
-        puts $csvf "$testfile,$alg_choice,$err_angle,$reject,$num_points,$mean_sq_error,$mean_abs_error,$circ_cx,$circ_cy,$circ_r,$noise_stdev,$visible_atmosphere_height,$runtime,$qwmes,$qxmes,$qymes,$qzmes,$nxmes,$nymes,$nzmes,$qwref,$qxref,$qyref,$qzref,$mquatw,$mquatx,$mquaty,$mquatz,$altitude,$latitude,$longitude,$noise_seed,$nxref,$nyref,$nzref,$magx,$magy,$magz,$magreadingx,$magreadingy,$magreadingz"
+        puts $csvf "$testfile,$alg_choice,$err_angle,$reject,$num_points,$mean_sq_error,$mean_abs_error,$circ_cx,$circ_cy,$circ_r,$noise_stdev,$visible_atmosphere_height,$runtime,$qwmes,$qxmes,$qymes,$qzmes,$nxmes,$nymes,$nzmes,$qwref,$qxref,$qyref,$qzref,$mquatw,$mquatx,$mquaty,$mquatz,$altitude,$latitude,$longitude,$noise_seed,$nxref,$nyref,$nzref,$magx,$magy,$magz,$magreadingx,$magreadingy,$magreadingz,$north_err_angle"
     }
 
 }
