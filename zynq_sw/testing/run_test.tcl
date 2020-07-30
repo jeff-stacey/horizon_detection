@@ -323,6 +323,7 @@ foreach testfile $testfiles {
             puts "\t***Horizon determination failed - radius too small***"
         }
         set err_angle NaN
+        set north_err_angle NaN
     } else {
         if { $nancount == 0 } {
                 set pi [expr acos(-1.0)]
@@ -345,8 +346,6 @@ foreach testfile $testfiles {
                 set ref_north_y [dict get $ref_north_q y]
                 set ref_north_z [dict get $ref_north_q z]
 
-                puts [expr $ref_north_x*$ref_north_x + $ref_north_z*$ref_north_z + $ref_north_y*$ref_north_y]
-                
                 # then by the measured one
                 set mes_north_q [quat_rotate_vector $qwmes $qxmes $qymes $qzmes 0 1 0]
                 set mes_north_x [dict get $mes_north_q x]
