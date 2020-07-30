@@ -43,7 +43,6 @@ void remove_barrel_distort_FO(Vec2D imdata[], int data_len, int im_width, int im
     float k = pd / ((1.0f - pd) * r_sq) ;
 
     Vec2D point;
-    rd = 0;
 
     for(int i=0; i<data_len; i++){
 
