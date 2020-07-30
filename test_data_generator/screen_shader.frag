@@ -8,19 +8,31 @@ uniform uint screen_height;
 uniform float alpha;
 uniform float alpha_atmosphere;
 
+// Distortion coeffs
+uniform float K1;
+uniform float K2;
+
 uniform sampler2D noise_texture;
 
 in vec2 tex_coord;
 
 void main()
 {
-    // Width of the image plane, for z = -1
+    // Width of the image plane, for z = -1, assuming FOV of 57 degrees
     const float width = 1.0859114f;
     float height = width * screen_height / screen_width;
 
     // Direction of frag in space
-    vec3 dir = vec3((gl_FragCoord.x / screen_width - 0.5f)
-        * width, (gl_FragCoord.y / screen_height - 0.5f) * height, -1.0f);
+    vec3 dir = vec3((gl_FragCoord.x / screen_width - 0.5f) * width,
+                    (gl_FragCoord.y / screen_height - 0.5f) * height,
+                    -1.0f);
+    
+    // Add distortion to dir (just need to distory xy coordinates)
+    {
+        float r_sq = dir.x*dir.x + dir.y*dir.y;
+        dir.x *= 1.0f / (1.0f + K1*r_sq + K2*r_sq*r_sq);
+        dir.x *= 1.0f / (1.0f + K1*r_sq + K2*r_sq*r_sq);
+    }
 
     vec3 color = vec3(0.0f, 0.0f, 0.0f);
     if (dot(nadir, normalize(dir)) > alpha)

@@ -15,6 +15,7 @@ struct Vec3
 #pragma pack(pop)
 
 Vec3 operator*(float lhs, const Vec3& rhs);
+Vec3 operator+(const Vec3& lhs, const Vec3& rhs);
 
 static_assert(sizeof(Vec3) == 3 * sizeof(float), "Vec3 has to be packed");
 

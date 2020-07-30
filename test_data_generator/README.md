@@ -24,6 +24,7 @@ There are several command line options. They can be applied in any combination, 
      - `noise_stdev`
  - `--fuzz_count <number of fuzz runs>`
  - `--fuzz_seed <fuzz seed>`
+ - `--mag_stdev <stdev>` supplies the (floating point) standard deviation of magnetometer readings between randomizations.
  
  Fuzz parameters are randomized within a range hard-coded into the application.
  

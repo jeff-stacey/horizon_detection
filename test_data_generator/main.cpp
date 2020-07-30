@@ -16,6 +16,8 @@ extern "C" {
 #include <iostream>
 #include <fstream>
 #include <cassert>
+#include <string> // For std::stof
+#include <random>
 
 using std::cout;
 using std::cerr;
@@ -38,8 +40,15 @@ struct FuzzOptions
     bool noise_seed = false;
     bool noise_stdev = false;
 
+    bool mag_reading = false;
+
+    float mag_stdev = DEFAULT_MAG_STDEV;
+
     unsigned int seed = 1;
     unsigned int count = 1;
+
+    std::default_random_engine mag_random_engine;
+    std::normal_distribution<float> mag_dist;
 };
 
 float random_float()
@@ -58,9 +67,9 @@ void export_all(std::string filename, RenderState render_state, SimulationState 
     sim_state.save_state(hrz_filename.c_str());
 }
 
-void randomize_state(SimulationState* state, FuzzOptions fuzz)
+void randomize_state(SimulationState* state, FuzzOptions* fuzz)
 {
-    if (fuzz.orientation)
+    if (fuzz->orientation)
     {
         state->camera.w = 2.0f * (random_float() - 0.5f);
         state->camera.x = 2.0f * (random_float() - 0.5f);
@@ -68,7 +77,7 @@ void randomize_state(SimulationState* state, FuzzOptions fuzz)
         state->camera.z = 2.0f * (random_float() - 0.5f);
         state->camera.normalize();
     }
-    if (fuzz.magnetometer_orientation)
+    if (fuzz->magnetometer_orientation)
     {
         state->magnetometer_reference_frame.w = random_float();
         state->magnetometer_reference_frame.x = random_float();
@@ -76,36 +85,42 @@ void randomize_state(SimulationState* state, FuzzOptions fuzz)
         state->magnetometer_reference_frame.z = random_float();
         state->magnetometer_reference_frame.normalize();
     }
-    if (fuzz.atmosphere_height)
+    if (fuzz->atmosphere_height)
     {
         float t = random_float();
         state->visible_atmosphere_height = MAX_ATMOSPHERE_HEIGHT * t + MIN_ATMOSPHERE_HEIGHT * (1.0f - t);
     }
-    if (fuzz.altitude)
+    if (fuzz->altitude)
     {
         float t = random_float();
         state->altitude = MAX_ALTITUDE * t + MIN_ALTITUDE * (1.0f - t);
     }
-    if (fuzz.latitude)
+    if (fuzz->latitude)
     {
         float t = random_float();
-        state->latitude = -180.0f * t + 180.0f * (1.0f - t);
+        state->latitude = -90.0f * t + 90.0f * (1.0f - t);
     }
-    if (fuzz.longitude)
+    if (fuzz->longitude)
     {
         float t = random_float();
-        state->longitude = -90.0f * t + 90.0f * (1.0f - t);
+        state->longitude = -180.0f * t + 180.0f * (1.0f - t);
     }
-    if (fuzz.noise_seed)
+    if (fuzz->noise_seed)
     {
-        // The scaling factor is arbitrary.
-        // It's probably a good idea for the noise seed to vary more than just 0 to 1
-        state->noise_seed = random_float() * 1000.0f;
+        // The scaling factor is arbitrary, possibly unnecessary.
+        state->noise_seed = rand();
     }
-    if (fuzz.noise_stdev)
+    if (fuzz->noise_stdev)
     {
         float t = random_float();
         state->noise_stdev = MAX_NOISE_STDEV * t + MIN_NOISE_STDEV * (1.0f - t);
+    }
+    if (fuzz->mag_reading)
+    {
+        fuzz->mag_dist.param(decltype(fuzz->mag_dist)::param_type(0.0f, fuzz->mag_stdev));
+        state->mag_noise.x = fuzz->mag_dist(fuzz->mag_random_engine);
+        state->mag_noise.y = fuzz->mag_dist(fuzz->mag_random_engine);
+        state->mag_noise.z = fuzz->mag_dist(fuzz->mag_random_engine);
     }
 }
 
@@ -187,6 +202,10 @@ CommandLineOptions parse_args(int argc, char** args)
                 {
                     options.fuzz.noise_stdev = true;
                 }
+                else if (strcmp("mag_reading", args[arg_index]) == 0)
+                {
+                    options.fuzz.mag_reading = true;
+                }
                 else if (strcmp("end", args[arg_index]) == 0)
                 {
                     break;
@@ -220,6 +239,17 @@ CommandLineOptions parse_args(int argc, char** args)
             char* count_end;
             options.fuzz.count = strtoul(args[arg_index], &count_end, 10);
             if (*count_end)
+            {
+                // Couldn't read the whole number
+                usage();
+            }
+        }
+        else if (strcmp("--mag_stdev", args[arg_index]) == 0)
+        {
+            ++arg_index;
+            size_t stdev_end;
+            options.fuzz.mag_stdev = std::stof(args[arg_index], &stdev_end);
+            if (args[arg_index][stdev_end])
             {
                 // Couldn't read the whole number
                 usage();
@@ -262,7 +292,7 @@ void compute_outputs(SimulationState* state, GeomagnetismData geomag)
 
     state->magnetic_field = Vec3(magnetic_field.Y, magnetic_field.X, -magnetic_field.Z);
     state->magnetic_field = state->camera.inverse().apply_rotation(state->magnetic_field);
-    Vec3 magnetometer = (0.001f / MAGNETIC_FIELD_SENSITIVITY) * state->magnetometer_reference_frame.apply_rotation(state->magnetic_field);
+    Vec3 magnetometer = (0.001f / MAGNETIC_FIELD_SENSITIVITY) * state->magnetometer_reference_frame.apply_rotation(state->magnetic_field) + state->mag_noise;
     // convert magnetometer to int16_t
     state->magnetometer.x = static_cast<int16_t>(roundf(magnetometer.x));
     state->magnetometer.y = static_cast<int16_t>(roundf(magnetometer.y));
@@ -340,12 +370,12 @@ void start_gui(RenderState render_state, SimulationState state, FuzzOptions fuzz
 
             if (ImGui::TreeNode("Noise"))
             {
-                ImGui::InputFloat("Noise seed", &state.noise_seed);
+                ImGui::InputInt("Noise seed", &state.noise_seed);
                 ImGui::SliderFloat("Noise stdev", &state.noise_stdev, MIN_NOISE_STDEV, MAX_NOISE_STDEV, "%.4f", 2);
                 if (ImGui::Button("Regenerate Noise"))
                 {
                     generate_noise(state.noise_seed, state.noise_stdev, &render_state);
-                    state.noise_seed += 1.0f;
+                    state.noise_seed += 1;
                 }
 
                 ImGui::TreePop();
@@ -356,6 +386,14 @@ void start_gui(RenderState render_state, SimulationState state, FuzzOptions fuzz
                 ImGui::InputFloat("Altitude", &state.altitude);
                 ImGui::InputFloat("Latitude (deg)", &state.latitude);
                 ImGui::InputFloat("Longitude (deg)", &state.longitude);
+
+                ImGui::TreePop();
+            }
+
+            if (ImGui::TreeNode("Distortion"))
+            {
+                ImGui::SliderFloat("K1", &render_state.K1, -MAX_LENS_DIST, MAX_LENS_DIST, "%6f");
+                ImGui::SliderFloat("K2", &render_state.K2, -MAX_LENS_DIST, MAX_LENS_DIST, "%6f");
 
                 ImGui::TreePop();
             }
@@ -389,9 +427,11 @@ void start_gui(RenderState render_state, SimulationState state, FuzzOptions fuzz
                 ImGui::Checkbox("Longitude", &fuzz_options.longitude);
                 ImGui::Checkbox("Noise Seed", &fuzz_options.noise_seed);
                 ImGui::Checkbox("Noise Stdev", &fuzz_options.noise_stdev);
+                ImGui::Checkbox("Magnetometer reading", &fuzz_options.mag_reading);
+                ImGui::InputFloat("Magnetometer stdev", &fuzz_options.mag_stdev);
                 if (ImGui::Button("Randomize"))
                 {
-                    randomize_state(&state, fuzz_options);
+                    randomize_state(&state, &fuzz_options);
                     generate_noise(state.noise_seed, state.noise_stdev, &render_state);
                 }
 
@@ -452,7 +492,14 @@ void start_gui(RenderState render_state, SimulationState state, FuzzOptions fuzz
 int main(int argc, char** args)
 {
     CommandLineOptions options = parse_args(argc, args);
-    srand(options.fuzz.seed);
+
+    // Seed fuzz engine
+    {
+        srand(options.fuzz.seed);
+
+        // Arbitrary and possibly unnecessary scaling factor
+        options.fuzz.mag_random_engine.seed(options.fuzz.seed);
+    }
 
     RenderState render_state = render_init(SCREEN_WIDTH_PIXELS, SCREEN_HEIGHT_PIXELS);
 
@@ -478,7 +525,7 @@ int main(int argc, char** args)
         std::string base_filename(options.export_filename);
         for (unsigned int i = 0; i < options.fuzz.count; ++i)
         {
-            randomize_state(&options.loaded_state, options.fuzz);
+            randomize_state(&options.loaded_state, &options.fuzz);
             generate_noise(options.loaded_state.noise_seed, options.loaded_state.noise_stdev, &render_state);
             compute_outputs(&options.loaded_state, geomag);
             export_all(base_filename + std::to_string(i), render_state, options.loaded_state);

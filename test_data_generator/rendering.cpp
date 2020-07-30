@@ -130,6 +130,12 @@ void render_frame(RenderState render_state, SimulationState state, uint32_t widt
     location = glGetUniformLocation(render_state.screen_shader, "alpha_atmosphere");
     glUniform1f(location, cosf(asinf((EARTH_RADIUS + state.visible_atmosphere_height) / (EARTH_RADIUS + state.altitude))));
 
+    location = glGetUniformLocation(render_state.screen_shader, "K1");
+    glUniform1f(location, render_state.K1);
+
+    location = glGetUniformLocation(render_state.screen_shader, "K2");
+    glUniform1f(location, render_state.K2);
+
     glBindVertexArray(render_state.screen_mesh.vao);
     glDrawArrays(
         GL_TRIANGLES,
@@ -195,7 +201,7 @@ void export_binary(const char* filename, RenderState render_state, SimulationSta
     fclose(fd);
 }
 
-void generate_noise(float seed, float stdev, RenderState* render_state)
+void generate_noise(int seed, float stdev, RenderState* render_state)
 {
     std::default_random_engine random_engine(seed);
     std::normal_distribution<float> normal_dist(0.0f, stdev);
