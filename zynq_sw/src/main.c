@@ -51,8 +51,18 @@ float magnetometer_transformation[16];
 // This variable selects which one to run:
 // 0 : edge detection and least-squares curve fitting
 // 1 : edge detection and chord curve fitting
-// 2 : vsearch (not yet implemented)
 int alg_choice = 0;
+
+// If the edge detection only finds a few points, they're likely noise or the
+// horizon is barely visible - fitting to these points can give wildly
+// inaccurate results. Below this threshold, we don't estimate an orientation.
+int min_required_points = 10;
+
+// If the radius of the circle we fit is smaller than it should be, something
+// has probably gone wrong - maybe we're fitting to noise, maybe we're fitting
+// to a tiny part of the horizon on the side of the image. Either way the
+// result is probably wrong.
+float min_circle_radius = 150.0;
 
 // Edge detection parameters
 float lowRatio = 0.5;
@@ -81,8 +91,14 @@ int subset_num = 20;
 
 // RESULTS:
 
+// indicates if the output is valid, and if not, why it's invalid
+// 0: valid nadir vector
+// 1: edge detection didn't find enough points (see min_required_points parameter)
+// 2: fit circle radius was too small (see min_circle_radius parameter)
+int reject;
+
 float nadir[3];
-Quaternion orientation = {0,1,0,0};
+Quaternion orientation;
 uint32_t cycles = 0;
 float mean_sq_error;
 float mean_abs_error;
@@ -104,51 +120,54 @@ int main() {
         dprintf("%d\n", magnetometer_reading[i]);
     }
 
-    if ((alg_choice == 0) || (alg_choice == 1)) {
-        dprintf("\nEdge Detection Testing Start\n");
-        //printRowSum(TestImg);
+    dprintf("\nEdge Detection Testing Start\n");
+    //printRowSum(TestImg);
 
-        dprintf("\tInitialized all output arrays\n");
+    dprintf("\tInitialized all output arrays\n");
 
-        conv2dGauss(TestImg, blurred, kernel_gauss);
-        dprintf("\tGaussian blurring of test image complete\n");
-        //printRowSum(blurred);
+    conv2dGauss(TestImg, blurred, kernel_gauss);
+    dprintf("\tGaussian blurring of test image complete\n");
+    //printRowSum(blurred);
 
-        conv2d(blurred, edge_x, kernel_x);
-        dprintf("\tx-direction 2D-convolution complete\n");
-        //printRowSum(edge_x);
+    conv2d(blurred, edge_x, kernel_x);
+    dprintf("\tx-direction 2D-convolution complete\n");
+    //printRowSum(edge_x);
 
-        conv2d(blurred, edge_y, kernel_y);
-        dprintf("\ty-direction 2D-convolution complete\n");
-        //printRowSum(edge_y);
+    conv2d(blurred, edge_y, kernel_y);
+    dprintf("\ty-direction 2D-convolution complete\n");
+    //printRowSum(edge_y);
 
-        imgHypot(edge_x, edge_y, grad);
-        dprintf("\tObtained gradient magnitude map\n");
-        //printRowSum(grad);
+    imgHypot(edge_x, edge_y, grad);
+    dprintf("\tObtained gradient magnitude map\n");
+    //printRowSum(grad);
 
-        imgTheta(edge_x, edge_y, theta);
-        dprintf("\tObtained gradient phase map\n\r");
-        //printRowSumTheta(theta);
+    imgTheta(edge_x, edge_y, theta);
+    dprintf("\tObtained gradient phase map\n\r");
+    //printRowSumTheta(theta);
 
-        nonMaxSuppression(suppressed, grad, theta);
-        dprintf("\tNon-Max suppression complete\n\r");
-        //printRowSum(suppressed);
+    nonMaxSuppression(suppressed, grad, theta);
+    dprintf("\tNon-Max suppression complete\n\r");
+    //printRowSum(suppressed);
 
-        doubleThreshold(suppressed, lowRatio, highRatio);
-        dprintf("\tDouble Thresholding complete\n");
-        //printRowSum(suppressed);
+    doubleThreshold(suppressed, lowRatio, highRatio);
+    dprintf("\tDouble Thresholding complete\n");
+    //printRowSum(suppressed);
 
-        edgeTracking(suppressed, strong, weak);
-        dprintf("\tEdge Tracking complete\n\r");
-        //printRowSum(suppressed);
+    edgeTracking(suppressed, strong, weak);
+    dprintf("\tEdge Tracking complete\n\r");
+    //printRowSum(suppressed);
 
-        // Current Method of storing Edge_Points
-        num_points = edge2Arr(suppressed,edge_points);
-        dprintf("\tEdges Stored in \"edge_points\" array\n\r");
-        //edgePrint(edge_points,num_points);
+    // Current Method of storing Edge_Points
+    num_points = edge2Arr(suppressed,edge_points);
+    dprintf("\tEdges Stored in \"edge_points\" array\n\r");
+    dprintf("\tEdge detection found %d points\n", num_points);
+    //edgePrint(edge_points,num_points);
 
-        dprintf("Edge Detection Complete\n");
-
+    dprintf("Edge Detection Complete\n");
+    
+    if (num_points > min_required_points) {
+        // if the edge detection returned enough points, we can proceed to curve fitting
+        
         if (alg_choice == 0){
             //least-squares fit
             dprintf("Starting least-squares fit\n");
@@ -162,9 +181,42 @@ int main() {
             lineintersect_circle_fit(edge_points, num_samples, subset_num, circ_params);
         }
 
-        float mag_float[3] = {(float)magnetometer_reading[0], (float)magnetometer_reading[1], (float)magnetometer_reading[2]};
-        find_nadir(circ_params, nadir, mag_float, &orientation);
+        if (circ_params[2] > min_circle_radius) {
+            float mag_float[3] = {(float)magnetometer_reading[0], (float)magnetometer_reading[1], (float)magnetometer_reading[2]};
+            dprintf("Computing nadir vector\n");
+            find_nadir(circ_params, nadir, mag_float, &orientation);
+            reject = 0;
+        } else {
+            dprintf("Circle radius below threshold - result invalid\n");
+            reject = 2;
+        }
+
+
+        // Goodness-of-fit checking not needed.
+        //float errors[2];
+        //dprintf("Checking goodness-of-fit\n");
+        //circleGOF(edge_points, num_points, circ_params, errors, 0);
+        //mean_sq_error = errors[0];
+        //mean_abs_error = errors[1];
+        //dprintf("errors: %f, %f\n", mean_sq_error, mean_abs_error);
+    } else {
+        // if the edge detection doesn't return any points, we probably can't see the horizon
+        dprintf("Not enough points - skipping fit\n");
+        reject = 1;
     }
+
+
+    if (reject != 0) {
+        // we don't have a valid nadir vector to return
+        nadir[0] = 0.0;
+        nadir[1] = 0.0;
+        nadir[2] = 0.0;
+        orientation.w = 0.0;
+        orientation.x = 0.0;
+        orientation.y = 0.0;
+        orientation.z = 0.0;
+    }
+
 
     uint32_t t1 = get_ccount();
     cycles = t1 - t0 - overhead;
@@ -173,12 +225,6 @@ int main() {
     //print results
     dprintf("nadir:\n");
     print3(nadir);
-
-    float errors[2];
-    circleGOF(edge_points, num_points, circ_params, errors, 0);
-    mean_sq_error = errors[0];
-    mean_abs_error = errors[1];
-    dprintf("errors: %f, %f\n", mean_sq_error, mean_abs_error);
 
     asm volatile ("end_of_main:");
     return 0;

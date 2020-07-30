@@ -115,7 +115,7 @@ if { $use_csv } {
     # open a .csv file for results
     set csvf [open $args(csv) w]
     # write heading line to the csv
-    puts $csvf "testfile,alg_choice,err_angle,num_points,mean_sq_error,mean_abs_error,circ_cx,circ_cy,circ_r,noise_stdev,visible_atmosphere_height,runtime,qwmes,qxmes,qymes,qzmes,nxmes,nymes,nzmes,qwref,qxref,qyref,qzref,mquatw,mquatx,mquaty,mquatz,altitude,latitude,longitude,noise_seed,nxref,nyref,nzref,magx,magy,magz,magreadingx,magreadingy,magreadingz"
+    puts $csvf "testfile,alg_choice,err_angle,reject,num_points,mean_sq_error,mean_abs_error,circ_cx,circ_cy,circ_r,noise_stdev,visible_atmosphere_height,runtime,qwmes,qxmes,qymes,qzmes,nxmes,nymes,nzmes,qwref,qxref,qyref,qzref,mquatw,mquatx,mquaty,mquatz,altitude,latitude,longitude,noise_seed,nxref,nyref,nzref,magx,magy,magz,magreadingx,magreadingy,magreadingz"
 }
 
 
@@ -242,6 +242,9 @@ foreach testfile $testfiles {
     # grab which algorithm was used
     set alg_choice [vread alg_choice]
 
+    # grab the result status
+    set reject [vread reject]
+
     # grab the runtime
     set cycles [vread cycles]
     set runtime [expr $cycles * 64 * 1/500e6]
@@ -289,7 +292,6 @@ foreach testfile $testfiles {
     set nancount 0
 
     if { [isnan $nxmes] } {
-        # nans don't equal each other
         puts [format "\tx: %+.10f  nan" $nxref]
         incr nancount
     } else {
@@ -310,45 +312,54 @@ foreach testfile $testfiles {
         puts [format "\tz: %+.10f  %+.10f" $nzref $nzmes]
     }
 
-    if { $nancount == 0 } {
-        set pi [expr acos(-1.0)]
-        set err_angle [expr 180 / $pi * acos($nxref * $nxmes + $nyref * $nymes + $nzref * $nzmes)]
-        puts [format "\tDetected nadir vector is off by %.4f degrees" $err_angle]
 
-        puts "\tOutput Quaternion"
-        puts "\t   Baseline       Detected"
-        puts [format "\tw: %+.10f  %+.10f" $qwref $qwmes]
-        puts [format "\tx: %+.10f  %+.10f" $qxref $qxmes]
-        puts [format "\ty: %+.10f  %+.10f" $qyref $qymes]
-        puts [format "\tz: %+.10f  %+.10f" $qzref $qzmes]
-
-        # rotate the vector pointing north from the base reference frame to the
-        # camera reference frame two ways:
-
-        # first by the reference orientation quaternion
-        set ref_north_q [quat_rotate_vector $qwref $qxref $qyref $qzref 0 1 0]
-        set ref_north_x [dict get $ref_north_q x]
-        set ref_north_y [dict get $ref_north_q y]
-        set ref_north_z [dict get $ref_north_q z]
-        
-        # then by the measured one
-        set mes_north_q [quat_rotate_vector $qwmes $qxmes $qymes $qzmes 0 1 0]
-        set mes_north_x [dict get $mes_north_q x]
-        set mes_north_y [dict get $mes_north_q y]
-        set mes_north_z [dict get $mes_north_q z]
-
-
-        # compute the angle between the two
-        set north_err_angle [expr 180 / $pi * acos($ref_north_x * $mes_north_x + $ref_north_y * $mes_north_y + $ref_north_z * $mes_north_z)]
-        puts [format "\tDetected north is %.4f degrees off" $north_err_angle]
-        
-    } else {
+    if { $reject } {
+        if { $reject == 1 } {
+            puts "\t***Horizon determination failed - not enough points***"
+        } else {
+            puts "\t***Horizon determination failed - radius too small***"
+        }
         set err_angle NaN
+    } else {
+        if { $nancount == 0 } {
+                set pi [expr acos(-1.0)]
+                set err_angle [expr 180 / $pi * acos($nxref * $nxmes + $nyref * $nymes + $nzref * $nzmes)]
+                puts [format "\tDetected nadir vector is off by %.4f degrees" $err_angle]
+
+                puts "\tOutput Quaternion"
+                puts "\t   Baseline       Detected"
+                puts [format "\tw: %+.10f  %+.10f" $qwref $qwmes]
+                puts [format "\tx: %+.10f  %+.10f" $qxref $qxmes]
+                puts [format "\ty: %+.10f  %+.10f" $qyref $qymes]
+                puts [format "\tz: %+.10f  %+.10f" $qzref $qzmes]
+
+                # rotate the vector pointing north from the base reference frame to the
+                # camera reference frame two ways:
+
+                # first by the reference orientation quaternion
+                set ref_north_q [quat_rotate_vector $qwref $qxref $qyref $qzref 0 1 0]
+                set ref_north_x [dict get $ref_north_q x]
+                set ref_north_y [dict get $ref_north_q y]
+                set ref_north_z [dict get $ref_north_q z]
+                
+                # then by the measured one
+                set mes_north_q [quat_rotate_vector $qwmes $qxmes $qymes $qzmes 0 1 0]
+                set mes_north_x [dict get $mes_north_q x]
+                set mes_north_y [dict get $mes_north_q y]
+                set mes_north_z [dict get $mes_north_q z]
+
+
+                # compute the angle between the two
+                set north_err_angle [expr 180 / $pi * acos($ref_north_x * $mes_north_x + $ref_north_y * $mes_north_y + $ref_north_z * $mes_north_z)]
+                puts [format "\tDetected north is %.4f degrees off" $north_err_angle]
+        } else {
+            error "One or more components of the nadir vector is NaN - something has gone wrong"
+        }
     }
 
     if { $use_csv } {
         # write results to CSV file
-        puts $csvf "$testfile,$alg_choice,$err_angle,$num_points,$mean_sq_error,$mean_abs_error,$circ_cx,$circ_cy,$circ_r,$noise_stdev,$visible_atmosphere_height,$runtime,$qwmes,$qxmes,$qymes,$qzmes,$nxmes,$nymes,$nzmes,$qwref,$qxref,$qyref,$qzref,$mquatw,$mquatx,$mquaty,$mquatz,$altitude,$latitude,$longitude,$noise_seed,$nxref,$nyref,$nzref,$magx,$magy,$magz,$magreadingx,$magreadingy,$magreadingz"
+        puts $csvf "$testfile,$alg_choice,$err_angle,$reject,$num_points,$mean_sq_error,$mean_abs_error,$circ_cx,$circ_cy,$circ_r,$noise_stdev,$visible_atmosphere_height,$runtime,$qwmes,$qxmes,$qymes,$qzmes,$nxmes,$nymes,$nzmes,$qwref,$qxref,$qyref,$qzref,$mquatw,$mquatx,$mquaty,$mquatz,$altitude,$latitude,$longitude,$noise_seed,$nxref,$nyref,$nzref,$magx,$magy,$magz,$magreadingx,$magreadingy,$magreadingz"
     }
 
 }
