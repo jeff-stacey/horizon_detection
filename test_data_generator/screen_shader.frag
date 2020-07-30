@@ -29,7 +29,7 @@ void main()
         float r_sq = frag_coord_centred.x*frag_coord_centred.x
             + frag_coord_centred.y*frag_coord_centred.y;
 
-        float screen_radius_sq = screen_width*screen_width + screen_height*screen_height;
+        float screen_radius_sq = 0.25f * (screen_width*screen_width + screen_height*screen_height);
 
         frag_coord_centred *= 1.0f + (K1*r_sq + K2*r_sq*r_sq) / screen_radius_sq;
     }
