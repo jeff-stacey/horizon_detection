@@ -28,7 +28,6 @@ SOFTWARE.
 
 #define d 80
 #define E_RADIUS 6378.136
-#define ALTITUDE 500 // TODO: we should pass this as a parameter
 #define FOV 0.994838
 
 void find_roll_quat(const float circle_params[3], Quaternion* result)
@@ -59,7 +58,7 @@ void find_roll_quat(const float circle_params[3], Quaternion* result)
     result->z = sinf(0.5f * theta);
 }
 
-void find_pitch_quat(const float circle_params[3], Quaternion* result)
+void find_pitch_quat(const float circle_params[3], float altitude, Quaternion* result)
 {
     //find pitch (theta_x)
 
@@ -86,7 +85,7 @@ void find_pitch_quat(const float circle_params[3], Quaternion* result)
         k = norm(&vert);
     }
 
-    float theta = atanf((k/d)*tan(FOV/2)) + asinf(E_RADIUS/(E_RADIUS+ALTITUDE));
+    float theta = atanf((k/d)*tan(FOV/2)) + asinf(E_RADIUS/(E_RADIUS+altitude));
     result->w = cosf(0.5f*theta);
     result->x = sinf(0.5f*theta);
     result->y = 0.0f;
@@ -145,12 +144,12 @@ void find_yaw_quat(const float mag[3], const Quaternion* R, const Quaternion* T,
     result->z = sinf(0.5f * theta);
 }
 
-void find_nadir(const float results[3], float nadir[3], float mag[3], Quaternion* overall_transformation)
+void find_nadir(const float results[3], float altitude, float nadir[3], float mag[3], Quaternion* overall_transformation)
 {
     Quaternion roll_quat;
     Quaternion pitch_quat;
 
-    find_pitch_quat(results, &pitch_quat);
+    find_pitch_quat(results, altitude, &pitch_quat);
     find_roll_quat(results, &roll_quat);
 
     pitch_quat.x *= -1.0f;

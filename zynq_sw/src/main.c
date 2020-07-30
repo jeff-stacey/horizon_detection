@@ -44,6 +44,9 @@ pixel TestImg[120][160];
 int16_t magnetometer_reading[3];
 float magnetometer_transformation[16];
 
+// Altitude (found externally)
+float altitude;
+
 // PARAMETERS: are initialized, but can be modified externally
 // they should remain constant while main is running
 
@@ -184,7 +187,7 @@ int main() {
         if (circ_params[2] > min_circle_radius) {
             float mag_float[3] = {(float)magnetometer_reading[0], (float)magnetometer_reading[1], (float)magnetometer_reading[2]};
             dprintf("Computing nadir vector\n");
-            find_nadir(circ_params, nadir, mag_float, &orientation);
+            find_nadir(circ_params, altitude, nadir, mag_float, &orientation);
             reject = 0;
         } else {
             dprintf("Circle radius below threshold - result invalid\n");
