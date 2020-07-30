@@ -112,9 +112,9 @@ void quaternion_rotate(const Quaternion* rot, float v[3])
     result_quat.y = v[1];
     result_quat.z = v[2];
 
-    Quaternion rot_inverse = quaternion_inverse(rot);
-
     result_quat = quaternion_multiply(rot, &result_quat);
+
+    Quaternion rot_inverse = quaternion_inverse(rot);
     result_quat = quaternion_multiply(&result_quat, &rot_inverse);
 
     v[0] = result_quat.x;

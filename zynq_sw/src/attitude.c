@@ -106,7 +106,7 @@ void find_yaw_quat(const float mag[3], const Quaternion* R, const Quaternion* T,
 
     // Project the magnetometer reading onto the plane normal
     // to the nadir vector. This is the direction we are treating
-    // as north.
+    // as north in the camera reference frame.
     float mag_nadir_component = nadir[0]*mag[0] + nadir[1]*mag[1] + nadir[2]*mag[2];
     float north[3] = {
         mag[0] - mag_nadir_component*nadir[0],
