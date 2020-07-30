@@ -26,6 +26,7 @@ SOFTWARE.
 
 #include "linalg.h"
 
+#define LEPTON_35_PD 0.13
 
 void remove_barrel_distort_FO(Vec2D imdata[], int data_len, int im_width, int im_height, float pd);
 

@@ -35,28 +35,25 @@ void remove_barrel_distort_FO(Vec2D imdata[], int data_len, int im_width, int im
     */
    
     Vec2D corner_point;
-    corner_point.x = im_width/2;
-    corner_point.y = im_height/2;
+    corner_point.x = im_width*0.5f;
+    corner_point.y = im_height*0.5f;
 
-    float rd = norm(&corner_point);
+    float r_sq = corner_point.x*corner_point.x + corner_point.y*corner_point.y;
 
-    Vec2D corner_point_p;
-    corner_point_p.x = corner_point.x/(pd+1);
-    corner_point_p.y = corner_point.y/(pd+1);
+    float k = pd / ((1.0f - pd) * r_sq) ;
 
-    float k = (corner_point.x - corner_point_p.x)/(corner_point.x*(rd*rd));
-
-    Vec2D temp_point;
+    Vec2D point;
     rd = 0;
 
     for(int i=0; i<data_len; i++){
-        temp_point.x = imdata[i].x;
-        temp_point.y = imdata[i].y;
 
-        rd = norm(&temp_point);
+        point.x = imdata[i].x;
+        point.y = imdata[i].y;
 
-        imdata[i].x = temp_point.x + temp_point.x*(k*rd*rd);
-        imdata[i].y = temp_point.y + temp_point.y*(k*rd*rd);
+        r_sq = point.x*point.x + point.y*point.y;
+
+        imdata[i].x *= 1 + k*r_sq;
+        imdata[i].y *= 1 + k*r_sq;
     }
 }
 

@@ -26,6 +26,7 @@ SOFTWARE.
 #include "circle_fit.h"
 #include "attitude.h"
 #include "perf.h"
+#include "imdistort.h"
 
 #include <stdint.h>
 #include <math.h>
@@ -38,7 +39,7 @@ SOFTWARE.
 // e.g. by the test script or by hardware reading sensors
 
 // Input image
-pixel TestImg[120][160];
+pixel TestImg[R_DIM][C_DIM];
 
 // Magnetometer readings and transformation
 int16_t magnetometer_reading[3];
@@ -77,14 +78,16 @@ pixel weak = 0x666;     // set weak to ~10% of total magnitude
 // INTERMEDIATE PRODUCTS: used by the algorithm for temporary storage
 
 // Edge Detection intermediate products
-pixel blurred[120][160];    // Create gaussian blurring step output
-pixel edge_x[120][160];     // Create x-direction gradient map output
-pixel edge_y[120][160];     // Create y-direction gradient map output
-pixel grad[120][160];         // Create Grad-Magnitude output
-float theta[120][160];         // Create Grad-Direction output
-pixel suppressed[120][160]; // Create Output for non-max suppression step
+pixel blurred[R_DIM][C_DIM];    // Create gaussian blurring step output
+pixel edge_x[R_DIM][C_DIM];     // Create x-direction gradient map output
+pixel edge_y[R_DIM][C_DIM];     // Create y-direction gradient map output
+pixel grad[R_DIM][C_DIM];         // Create Grad-Magnitude output
+float theta[R_DIM][C_DIM];         // Create Grad-Direction output
+pixel suppressed[R_DIM][C_DIM]; // Create Output for non-max suppression step
 uint16_t num_points = 0;
-Vec2D edge_points[19200];   // Create output array for number of edges
+Vec2D edge_points[R_DIM*C_DIM];   // Create output array for number of edges
+
+int correct_barrel_dist = 0;
 
 // Circle fitting intermediate products
 // array containing (x_0, y_0, r) circle parameters
@@ -170,6 +173,12 @@ int main() {
     
     if (num_points > min_required_points) {
         // if the edge detection returned enough points, we can proceed to curve fitting
+
+        // Correct barrel distortion
+        if (correct_barrel_dist)
+        {
+            remove_barrel_distort_FO(edge_points, num_points, C_DIM, R_DIM, LEPTON_35_PD);
+        }
         
         if (alg_choice == 0){
             //least-squares fit
